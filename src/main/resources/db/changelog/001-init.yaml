@@ -1,0 +1,553 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-enums
+      author: system
+      changes:
+        - sql:
+            sql: |
+              DO $$ BEGIN
+                CREATE TYPE status_enum AS ENUM ('ACTIVE', 'INACTIVE');
+              EXCEPTION
+                WHEN duplicate_object THEN null;
+              END $$;
+              
+              DO $$ BEGIN
+                CREATE TYPE role_enum AS ENUM ('SUPER_ADMIN', 'PARISH_ADMIN', 'REGISTRAR', 'PRIEST', 'VIEWER');
+              EXCEPTION
+                WHEN duplicate_object THEN null;
+              END $$;
+              
+              DO $$ BEGIN
+                CREATE TYPE sacrament_type_enum AS ENUM ('BAPTISM', 'CONFIRMATION', 'EUCHARIST', 'RECONCILIATION', 'ANOINTING', 'HOLY_ORDERS', 'MATRIMONY');
+              EXCEPTION
+                WHEN duplicate_object THEN null;
+              END $$;
+              
+              DO $$ BEGIN
+                CREATE TYPE revocation_status_enum AS ENUM ('ACTIVE', 'REVOKED');
+              EXCEPTION
+                WHEN duplicate_object THEN null;
+              END $$;
+
+  - changeSet:
+      id: 002-create-tenants
+      author: system
+      changes:
+        - createTable:
+            tableName: tenants
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: slug
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: parent_id
+                  type: UUID
+              - column:
+                  name: theme
+                  type: JSONB
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+                    defaultValueComputed: "CURRENT_TIMESTAMP"
+
+  - changeSet:
+      id: 003-create-app-users
+      author: system
+      changes:
+        - createTable:
+            tableName: app_users
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: email
+                  type: CITEXT
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: full_name
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: mfa_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: status_enum
+                  defaultValue: "ACTIVE"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+                    defaultValueComputed: "CURRENT_TIMESTAMP"
+
+  - changeSet:
+      id: 004-create-memberships
+      author: system
+      changes:
+        - createTable:
+            tableName: memberships
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: role_enum
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: status_enum
+                  defaultValue: "ACTIVE"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: granted_by
+                  type: UUID
+              - column:
+                  name: granted_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+                    defaultValueComputed: "CURRENT_TIMESTAMP"
+            addUniqueConstraint:
+              constraintName: uk_memberships_user_tenant
+              columnNames: user_id, tenant_id
+
+  - changeSet:
+      id: 005-create-permissions
+      author: system
+      changes:
+        - createTable:
+            tableName: permissions
+            columns:
+              - column:
+                  name: key
+                  type: VARCHAR(100)
+                  constraints:
+                    primaryKey: true
+
+  - changeSet:
+      id: 006-create-role-permissions
+      author: system
+      changes:
+        - createTable:
+            tableName: role_permissions
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: role
+                  type: role_enum
+                  constraints:
+                    nullable: false
+              - column:
+                  name: permission_key
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+            addUniqueConstraint:
+              constraintName: uk_role_permissions_role_key
+              columnNames: role, permission_key
+
+  - changeSet:
+      id: 007-create-content-blocks
+      author: system
+      changes:
+        - createTable:
+            tableName: content_blocks
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: key
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: draft
+                  type: JSONB
+              - column:
+                  name: published
+                  type: JSONB
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+                    defaultValueComputed: "CURRENT_TIMESTAMP"
+            addUniqueConstraint:
+              constraintName: uk_content_blocks_tenant_key
+              columnNames: tenant_id, key
+
+  - changeSet:
+      id: 008-create-sacrament-events
+      author: system
+      changes:
+        - createTable:
+            tableName: sacrament_events
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: sacrament_type_enum
+                  constraints:
+                    nullable: false
+              - column:
+                  name: person_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: minister_id
+                  type: UUID
+              - column:
+                  name: book_no
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: page_no
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entry_no
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: status_enum
+                  defaultValue: "ACTIVE"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_by
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+                    defaultValueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: updated_by
+                  type: UUID
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+              - column:
+                  name: deactivated_at
+                  type: TIMESTAMP
+              - column:
+                  name: deactivated_by
+                  type: UUID
+              - column:
+                  name: deactivation_reason
+                  type: VARCHAR(500)
+
+  - changeSet:
+      id: 009-create-certificates
+      author: system
+      changes:
+        - createTable:
+            tableName: certificates
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: event_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: serial_no
+                  type: VARCHAR(26)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: issued_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+                    defaultValueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: issuer_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: revocation_status
+                  type: revocation_status_enum
+                  defaultValue: "ACTIVE"
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 010-create-audit-logs
+      author: system
+      changes:
+        - createTable:
+            tableName: audit_logs
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: tenant_id
+                  type: UUID
+              - column:
+                  name: actor_id
+                  type: UUID
+              - column:
+                  name: action
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entity
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entity_id
+                  type: UUID
+              - column:
+                  name: before
+                  type: JSONB
+              - column:
+                  name: after
+                  type: JSONB
+              - column:
+                  name: ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+                    defaultValueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: hash
+                  type: VARCHAR(64)
+              - column:
+                  name: prev_hash
+                  type: VARCHAR(64)
+
+  - changeSet:
+      id: 011-create-idempotency-keys
+      author: system
+      changes:
+        - createTable:
+            tableName: idempotency_keys
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: key
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: request_hash
+                  type: VARCHAR(64)
+              - column:
+                  name: response_code
+                  type: INTEGER
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+                    defaultValueComputed: "CURRENT_TIMESTAMP"
+            addUniqueConstraint:
+              constraintName: uk_idempotency_tenant_key
+              columnNames: tenant_id, key
+
+  - changeSet:
+      id: 012-seed-permissions
+      author: system
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO permissions (key) VALUES
+                ('users.manage'),
+                ('users.view'),
+                ('permissions.grant'),
+                ('sacraments.create'),
+                ('sacraments.update'),
+                ('sacraments.view'),
+                ('settings.edit'),
+                ('audit.view')
+              ON CONFLICT (key) DO NOTHING;
+
+  - changeSet:
+      id: 013-seed-role-permissions
+      author: system
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO role_permissions (role, permission_key) VALUES
+                ('SUPER_ADMIN', 'users.manage'),
+                ('SUPER_ADMIN', 'users.view'),
+                ('SUPER_ADMIN', 'permissions.grant'),
+                ('SUPER_ADMIN', 'sacraments.create'),
+                ('SUPER_ADMIN', 'sacraments.update'),
+                ('SUPER_ADMIN', 'sacraments.view'),
+                ('SUPER_ADMIN', 'settings.edit'),
+                ('SUPER_ADMIN', 'audit.view'),
+                ('PARISH_ADMIN', 'users.manage'),
+                ('PARISH_ADMIN', 'users.view'),
+                ('PARISH_ADMIN', 'permissions.grant'),
+                ('PARISH_ADMIN', 'sacraments.create'),
+                ('PARISH_ADMIN', 'sacraments.update'),
+                ('PARISH_ADMIN', 'sacraments.view'),
+                ('PARISH_ADMIN', 'settings.edit'),
+                ('PARISH_ADMIN', 'audit.view'),
+                ('REGISTRAR', 'sacraments.create'),
+                ('REGISTRAR', 'sacraments.update'),
+                ('REGISTRAR', 'sacraments.view'),
+                ('PRIEST', 'sacraments.create'),
+                ('PRIEST', 'sacraments.view'),
+                ('VIEWER', 'sacraments.view'),
+                ('VIEWER', 'users.view')
+              ON CONFLICT (role, permission_key) DO NOTHING;
+
+  - changeSet:
+      id: 014-create-outbox
+      author: system
+      changes:
+        - createTable:
+            tableName: outbox
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: tenant_id
+                  type: UUID
+              - column:
+                  name: topic
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: payload
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  defaultValue: "PENDING"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+                    defaultValueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: published_at
+                  type: TIMESTAMP
+              - column:
+                  name: retry_count
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: error_message
+                  type: VARCHAR(1000)
+
+  - changeSet:
+      id: 015-seed-sample-tenant
+      author: system
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO tenants (id, slug, name, theme) VALUES
+                ('550e8400-e29b-41d4-a716-446655440000', 'sample-parish', 'Sample Parish', '{"primaryColor": "#0066cc", "logo": "/logo.png"}'::jsonb)
+              ON CONFLICT (slug) DO NOTHING;
+

@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/registry_test
+    username: test
+    password: test
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  liquibase:
+    enabled: true
+
+logging:
+  level:
+    root: WARN
+    com.example.registry: DEBUG
+

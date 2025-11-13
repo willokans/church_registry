@@ -1,0 +1,24 @@
+spring:
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    root: INFO
+    com.example.registry: INFO
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+app:
+  openapi:
+    enabled: false
+
+sentry:
+  traces-sample-rate: 0.05
+

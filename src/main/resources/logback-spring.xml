@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    
+    <springProfile name="dev">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+    
+    <springProfile name="prod,test">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                <providers>
+                    <timestamp>
+                        <timeZone>UTC</timeZone>
+                    </timestamp>
+                    <version/>
+                    <logLevel/>
+                    <message/>
+                    <mdc/>
+                    <stackTrace>
+                        <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                            <maxDepth>50</maxDepth>
+                            <rootCauseFirst>true</rootCauseFirst>
+                        </throwableConverter>
+                    </stackTrace>
+                    <pattern>
+                        <pattern>
+                            {
+                                "service": "church-registry",
+                                "trace_id": "%mdc{traceId}",
+                                "span_id": "%mdc{spanId}"
+                            }
+                        </pattern>
+                    </pattern>
+                </providers>
+            </encoder>
+        </appender>
+        
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/registry.log</file>
+            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                <providers>
+                    <timestamp>
+                        <timeZone>UTC</timeZone>
+                    </timestamp>
+                    <version/>
+                    <logLevel/>
+                    <message/>
+                    <mdc/>
+                    <stackTrace>
+                        <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                            <maxDepth>50</maxDepth>
+                            <rootCauseFirst>true</rootCauseFirst>
+                        </throwableConverter>
+                    </stackTrace>
+                </providers>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>logs/registry-%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>1GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+        
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+    
+    <!-- Mask PII in logs -->
+    <turboFilter class="ch.qos.logback.classic.turbo.MarkerFilter">
+        <Marker>PII</Marker>
+        <OnMatch>DENY</OnMatch>
+    </turboFilter>
+</configuration>

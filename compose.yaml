@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: registry
+      POSTGRES_USER: registry
+      POSTGRES_PASSWORD: registry
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U registry"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres:5432/registry
+      DB_USER: registry
+      DB_PASSWORD: registry
+      JWT_ISSUER_URI: ${JWT_ISSUER_URI:-https://dev-issuer.example.com/.well-known/openid-configuration}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-registry-api}
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: registry-attachments
+      S3_ACCESS_KEY: minio
+      S3_SECRET_KEY: minio123
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+
+volumes:
+  postgres_data:
+  minio_data:
+

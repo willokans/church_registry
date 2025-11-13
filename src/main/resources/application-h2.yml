@@ -1,0 +1,52 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:registry;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+        # Quote identifiers to handle reserved words like 'key'
+        globally_quoted_identifiers: true
+        # Use Hibernate's import.sql which runs AFTER schema creation
+        # import.sql is the default filename, so no need to specify
+
+  liquibase:
+    enabled: false
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false
+        # Pre-configure the JDBC URL for easier access
+        trace: false
+
+  sql:
+    init:
+      mode: never # Disable Spring SQL init (runs too early)
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.example.registry: DEBUG
+
+app:
+  storage:
+    type: local
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Disable JWT validation for H2/local dev (use mock tokens)
+          issuer-uri: https://dev-issuer.example.com/.well-known/openid-configuration
+          audience: registry-api
