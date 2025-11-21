@@ -25,7 +25,7 @@ class IdempotencyTest : BaseIntegrationTest() {
     fun setup() {
         val tenant = tenantRepository.save(
             com.example.registry.domain.entity.Tenant(
-                slug = "test-tenant",
+                slug = "test-tenant-${UUID.randomUUID()}",
                 name = "Test Tenant"
             )
         )

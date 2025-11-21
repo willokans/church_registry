@@ -12,7 +12,7 @@ import java.util.*
 @Table(name = "sacrament_events")
 // Indexes temporarily removed - will be added back after tables are created
 // Indexes can be created manually via SQL or added back once schema is stable
-@Where(clause = "status = 'ACTIVE'")
+@Where(clause = "\"status\" = 'ACTIVE'")
 data class SacramentEvent(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,16 +50,16 @@ data class SacramentEvent(
     @Column(name = "created_by", nullable = false)
     val createdBy: Long,
     
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),
     
     @Column(name = "updated_by")
     val updatedBy: Long? = null,
     
-    @Column(name = "updated_at", columnDefinition = "TIMESTAMP(0)")
+    @Column(name = "updated_at")
     val updatedAt: Instant? = null,
     
-    @Column(name = "deactivated_at", columnDefinition = "TIMESTAMP(0)")
+    @Column(name = "deactivated_at")
     val deactivatedAt: Instant? = null,
     
     @Column(name = "deactivated_by")

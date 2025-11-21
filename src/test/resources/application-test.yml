@@ -5,13 +5,25 @@ spring:
     password: test
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create-drop
     show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        globally_quoted_identifiers: true
+        jdbc:
+          use_get_generated_keys: true
   liquibase:
-    enabled: true
+    enabled: false
 
 logging:
   level:
     root: WARN
     com.example.registry: DEBUG
 
+app:
+  storage:
+    type: local
+    local:
+      base-path: ./target/test-storage
+      base-url: http://localhost:8080/storage

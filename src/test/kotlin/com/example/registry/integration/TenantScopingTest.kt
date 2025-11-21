@@ -38,23 +38,26 @@ class TenantScopingTest : BaseIntegrationTest() {
     @BeforeEach
     @Transactional
     fun setup() {
+        val uuid1 = UUID.randomUUID()
+        val uuid2 = UUID.randomUUID()
         val t1 = tenantRepository.save(
             com.example.registry.domain.entity.Tenant(
-                slug = "tenant1",
+                slug = "tenant1-$uuid1",
                 name = "Tenant 1"
             )
         )
         val t2 = tenantRepository.save(
             com.example.registry.domain.entity.Tenant(
-                slug = "tenant2",
+                slug = "tenant2-$uuid2",
                 name = "Tenant 2"
             )
         )
         tenant1 = t1.id
         tenant2 = t2.id
         
-        val u1 = userService.createUser("user1@test.com", "User 1")
-        val u2 = userService.createUser("user2@test.com", "User 2")
+        val uuid = UUID.randomUUID()
+        val u1 = userService.createUser("user1-$uuid@test.com", "User 1")
+        val u2 = userService.createUser("user2-$uuid@test.com", "User 2")
         user1 = u1.id
         user2 = u2.id
         

@@ -11,7 +11,7 @@ import java.util.*
     Index(name = "idx_app_users_email", columnList = "email"),
     Index(name = "idx_app_users_status", columnList = "status")
 ])
-@Where(clause = "status = 'ACTIVE'")
+@Where(clause = "\"status\" = 'ACTIVE'")
 data class AppUser(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +30,7 @@ data class AppUser(
     @Column(nullable = false, length = 20)
     val status: Status = Status.ACTIVE,
     
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now()
 )
 

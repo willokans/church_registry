@@ -31,7 +31,7 @@ data class ContentBlock(
     @Column
     val published: Map<String, Any>? = null,
     
-    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP(0)")
+    @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant = Instant.now()
 )
 

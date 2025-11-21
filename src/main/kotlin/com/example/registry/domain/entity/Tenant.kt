@@ -26,7 +26,7 @@ data class Tenant(
     @Column
     val theme: Map<String, Any>? = null,
     
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now()
 )
 

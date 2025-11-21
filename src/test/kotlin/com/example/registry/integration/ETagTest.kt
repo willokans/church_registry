@@ -34,13 +34,13 @@ class ETagTest : BaseIntegrationTest() {
     fun setup() {
         val tenant = tenantRepository.save(
             com.example.registry.domain.entity.Tenant(
-                slug = "test-tenant",
+                slug = "test-tenant-${UUID.randomUUID()}",
                 name = "Test Tenant"
             )
         )
         tenantId = tenant.id
         
-        val user = userService.createUser("user@test.com", "Test User")
+        val user = userService.createUser("user-${UUID.randomUUID()}@test.com", "Test User")
         userId = user.id
         userService.grantMembership(userId, tenantId, Role.VIEWER, userId)
     }

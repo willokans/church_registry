@@ -7,11 +7,8 @@ import java.util.*
 @Entity
 @Table(
     name = "idempotency_keys",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["tenant_id", "key"])],
-    indexes = [
-        Index(name = "idx_idempotency_tenant_key", columnList = "tenant_id,key"),
-        Index(name = "idx_idempotency_created", columnList = "created_at")
-    ]
+    uniqueConstraints = [UniqueConstraint(columnNames = ["tenant_id", "key"])]
+    // Indexes temporarily removed - will be added back via Liquibase or manual SQL
 )
 data class IdempotencyKey(
     @Id
@@ -30,7 +27,7 @@ data class IdempotencyKey(
     @Column(name = "response_code")
     val responseCode: Int? = null,
     
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now()
 )
 

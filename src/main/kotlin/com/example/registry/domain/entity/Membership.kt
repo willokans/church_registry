@@ -14,7 +14,7 @@ import java.util.*
     // Indexes temporarily removed - will be added back after tables are created
     // Indexes can be created manually via SQL or added back once schema is stable
 )
-@Where(clause = "status = 'ACTIVE'")
+@Where(clause = "\"status\" = 'ACTIVE'")
 data class Membership(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,7 +37,7 @@ data class Membership(
     @Column(name = "granted_by")
     val grantedBy: Long? = null,
     
-    @Column(name = "granted_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
+    @Column(name = "granted_at", nullable = false, updatable = false)
     val grantedAt: Instant = Instant.now()
 )
 

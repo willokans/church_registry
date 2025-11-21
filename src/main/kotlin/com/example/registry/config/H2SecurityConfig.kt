@@ -10,10 +10,10 @@ import org.springframework.security.oauth2.jwt.JwtException
 import java.time.Instant
 
 /**
- * Mock JWT decoder for H2/local development when OAuth2 issuer is not available
+ * Mock JWT decoder for H2/local development and tests when OAuth2 issuer is not available
  */
 @Configuration
-@Profile("h2")
+@Profile("h2", "test")
 class H2SecurityConfig {
     
     @Bean
