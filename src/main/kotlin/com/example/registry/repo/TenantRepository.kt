@@ -9,5 +9,7 @@ import java.util.*
 interface TenantRepository : JpaRepository<Tenant, Long> {
     fun findBySlug(slug: String): Tenant?
     fun existsBySlug(slug: String): Boolean
+    fun existsByName(name: String): Boolean
+    fun findByName(name: String): Tenant?
 }
 
