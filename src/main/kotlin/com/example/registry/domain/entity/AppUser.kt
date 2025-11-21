@@ -4,6 +4,7 @@ import com.example.registry.domain.Status
 import jakarta.persistence.*
 import org.hibernate.annotations.Where
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 @Entity
@@ -31,6 +32,6 @@ data class AppUser(
     val status: Status = Status.ACTIVE,
     
     @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now()
+    val createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.SECONDS)
 )
 

@@ -10,9 +10,14 @@ import java.util.*
 @Entity
 @Table(
     name = "memberships",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["user_id", "tenant_id"])]
-    // Indexes temporarily removed - will be added back after tables are created
-    // Indexes can be created manually via SQL or added back once schema is stable
+    uniqueConstraints = [UniqueConstraint(columnNames = ["user_id", "tenant_id"])],
+    indexes = [
+        Index(name = "idx_memberships_user_id", columnList = "user_id"),
+        Index(name = "idx_memberships_tenant_id", columnList = "tenant_id"),
+        Index(name = "idx_memberships_role", columnList = "role"),
+        Index(name = "idx_memberships_status", columnList = "status"),
+        Index(name = "idx_memberships_user_tenant_status", columnList = "user_id,tenant_id,status")
+    ]
 )
 @Where(clause = "\"status\" = 'ACTIVE'")
 data class Membership(
