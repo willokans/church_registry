@@ -44,7 +44,7 @@ data class AuditLog(
     @Column
     val after: Map<String, Any>? = null,
     
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
     val ts: Instant = Instant.now(),
     
     @Column(length = 64)

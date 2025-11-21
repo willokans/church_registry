@@ -7,7 +7,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create # Use 'create' to ensure tables are created at startup
     show-sql: true
     properties:
       hibernate:
@@ -15,8 +15,8 @@ spring:
         format_sql: true
         # Quote identifiers to handle reserved words like 'key'
         globally_quoted_identifiers: true
-        # Use Hibernate's import.sql which runs AFTER schema creation
-        # import.sql is the default filename, so no need to specify
+        # Disable import.sql - we use H2DataInitializer instead
+        # import-files is not needed - just don't have import.sql file
 
   liquibase:
     enabled: false
@@ -43,10 +43,5 @@ logging:
 app:
   storage:
     type: local
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          # Disable JWT validation for H2/local dev (use mock tokens)
-          issuer-uri: https://dev-issuer.example.com/.well-known/openid-configuration
-          audience: registry-api
+# JWT configuration: H2SecurityConfig provides a mock JwtDecoder for local development
+# No issuer-uri needed - the mock decoder accepts any token

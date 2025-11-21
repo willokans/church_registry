@@ -24,7 +24,7 @@ data class Certificate(
     @Column(name = "serial_no", nullable = false, unique = true, length = 26)
     val serialNo: String, // ULID
     
-    @Column(name = "issued_at", nullable = false, updatable = false)
+    @Column(name = "issued_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
     val issuedAt: Instant = Instant.now(),
     
     @Column(name = "issuer_id", nullable = false)

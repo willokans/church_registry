@@ -40,7 +40,7 @@ data class Membership(
     @Column(name = "granted_by")
     val grantedBy: UUID? = null,
     
-    @Column(name = "granted_at", nullable = false, updatable = false)
+    @Column(name = "granted_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
     val grantedAt: Instant = Instant.now()
 )
 

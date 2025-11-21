@@ -30,7 +30,7 @@ data class AppUser(
     @Column(nullable = false, length = 20)
     val status: Status = Status.ACTIVE,
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
     val createdAt: Instant = Instant.now()
 )
 

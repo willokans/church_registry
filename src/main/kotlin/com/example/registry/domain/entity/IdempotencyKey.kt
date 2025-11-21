@@ -30,7 +30,7 @@ data class IdempotencyKey(
     @Column(name = "response_code")
     val responseCode: Int? = null,
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
     val createdAt: Instant = Instant.now()
 )
 

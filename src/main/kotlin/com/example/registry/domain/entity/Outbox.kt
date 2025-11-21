@@ -35,10 +35,10 @@ data class Outbox(
     @Column(nullable = false, length = 50)
     val status: String = "PENDING", // PENDING, PUBLISHED, FAILED
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
     val createdAt: Instant = Instant.now(),
     
-    @Column(name = "published_at")
+    @Column(name = "published_at", columnDefinition = "TIMESTAMP(0)")
     val publishedAt: Instant? = null,
     
     @Column(name = "retry_count", nullable = false)

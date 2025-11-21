@@ -57,16 +57,16 @@ data class SacramentEvent(
     @Column(name = "created_by", nullable = false)
     val createdBy: UUID,
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
     val createdAt: Instant = Instant.now(),
     
     @Column(name = "updated_by")
     val updatedBy: UUID? = null,
     
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", columnDefinition = "TIMESTAMP(0)")
     val updatedAt: Instant? = null,
     
-    @Column(name = "deactivated_at")
+    @Column(name = "deactivated_at", columnDefinition = "TIMESTAMP(0)")
     val deactivatedAt: Instant? = null,
     
     @Column(name = "deactivated_by")
