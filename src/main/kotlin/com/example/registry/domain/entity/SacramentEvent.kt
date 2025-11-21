@@ -9,16 +9,9 @@ import java.time.LocalDate
 import java.util.*
 
 @Entity
-@Table(
-    name = "sacrament_events",
-    indexes = [
-        Index(name = "idx_sacrament_events_tenant", columnList = "tenant_id"),
-        Index(name = "idx_sacrament_events_type", columnList = "type"),
-        Index(name = "idx_sacrament_events_date", columnList = "date"),
-        Index(name = "idx_sacrament_events_status", columnList = "status"),
-        Index(name = "idx_sacrament_events_book_page_entry", columnList = "tenant_id,type,book_no,page_no,entry_no")
-    ]
-)
+@Table(name = "sacrament_events")
+// Indexes temporarily removed - will be added back after tables are created
+// Indexes can be created manually via SQL or added back once schema is stable
 @Where(clause = "status = 'ACTIVE'")
 data class SacramentEvent(
     @Id

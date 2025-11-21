@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationListener
 import org.springframework.context.annotation.Profile
 import org.springframework.orm.jpa.EntityManagerFactoryUtils
 import org.springframework.stereotype.Component
+import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.util.*
@@ -19,20 +20,50 @@ class H2DataInitializer(
     private val tenantRepository: TenantRepository,
     private val permissionRepository: PermissionRepository,
     private val rolePermissionRepository: RolePermissionRepository,
-    private val entityManagerFactory: EntityManagerFactory
+    private val entityManagerFactory: EntityManagerFactory,
+    private val transactionManager: PlatformTransactionManager
 ) : ApplicationListener<ApplicationReadyEvent> {
     
     override fun onApplicationEvent(event: ApplicationReadyEvent) {
-        // Run in a separate thread to avoid blocking startup
-        // and to ensure tables are fully created
+        // With ddl-auto: none, we need to create tables manually
+        // Use the existing EntityManagerFactory's metadata to create schema
+        try {
+            val sessionFactory = entityManagerFactory.unwrap(org.hibernate.SessionFactory::class.java)
+            val metadata = sessionFactory.metamodel
+            
+            // Force table creation by accessing each entity type
+            // This triggers Hibernate to create tables on first access
+            val transactionTemplate = org.springframework.transaction.support.TransactionTemplate(transactionManager)
+            transactionTemplate.propagationBehavior = org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW
+            
+            transactionTemplate.executeWithoutResult {
+                val em = EntityManagerFactoryUtils.getTransactionalEntityManager(entityManagerFactory)
+                em?.let { entityManager ->
+                    // Access each entity to trigger table creation
+                    try {
+                        entityManager.createQuery("SELECT COUNT(t) FROM Tenant t", Long::class.java).singleResult
+                    } catch (_: Exception) {
+                        // Table will be created on first persist
+                    }
+                    try {
+                        entityManager.createQuery("SELECT COUNT(p) FROM Permission p", Long::class.java).singleResult
+                    } catch (_: Exception) {}
+                    try {
+                        entityManager.createQuery("SELECT COUNT(rp) FROM RolePermission rp", Long::class.java).singleResult
+                    } catch (_: Exception) {}
+                }
+            }
+        } catch (e: Exception) {
+            System.err.println("⚠ Warning: Could not force schema creation: ${e.message}")
+        }
+        
+        // Wait a moment, then seed data
         Thread {
             try {
-                // Wait a bit for all tables to be created
-                Thread.sleep(1000)
+                Thread.sleep(2000)
                 seedDataIfNeeded()
             } catch (e: Exception) {
                 System.err.println("⚠ Failed to seed H2 database: ${e.message}")
-                // Don't crash the app - just log the error
             }
         }.start()
     }

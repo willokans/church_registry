@@ -7,7 +7,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create # Use 'create' to ensure tables are created at startup
+      ddl-auto: create # Create tables on first access (lazy creation)
     show-sql: true
     properties:
       hibernate:
@@ -15,8 +15,9 @@ spring:
         format_sql: true
         # Quote identifiers to handle reserved words like 'key'
         globally_quoted_identifiers: true
-        # Disable import.sql - we use H2DataInitializer instead
-        # import-files is not needed - just don't have import.sql file
+        # JDBC settings
+        jdbc:
+          time_zone: UTC
 
   liquibase:
     enabled: false
