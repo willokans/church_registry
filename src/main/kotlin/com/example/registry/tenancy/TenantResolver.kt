@@ -10,7 +10,7 @@ class TenantResolver(
     private val tenantRepository: TenantRepository,
     private val tenantProperties: TenantProperties
 ) {
-    fun resolve(request: HttpServletRequest): UUID? {
+    fun resolve(request: HttpServletRequest): Long? {
         val slug = when (tenantProperties.resolutionMode) {
             "hostname" -> extractSlugFromHost(request.getHeader("Host") ?: "")
             "header" -> request.getHeader(tenantProperties.headerName)

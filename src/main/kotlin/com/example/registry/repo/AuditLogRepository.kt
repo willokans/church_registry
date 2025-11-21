@@ -24,10 +24,10 @@ interface AuditLogRepository : JpaRepository<AuditLog, Long> {
         ORDER BY a.id ASC
     """)
     fun findAllByFilters(
-        @Param("tenantId") tenantId: UUID?,
-        @Param("actorId") actorId: UUID?,
+        @Param("tenantId") tenantId: Long?,
+        @Param("actorId") actorId: Long?,
         @Param("entity") entity: String?,
-        @Param("entityId") entityId: UUID?,
+        @Param("entityId") entityId: String?,
         @Param("fromTs") fromTs: Instant?,
         @Param("toTs") toTs: Instant?,
         @Param("cursor") cursor: Long?,

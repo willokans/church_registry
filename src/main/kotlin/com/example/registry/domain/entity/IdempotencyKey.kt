@@ -19,7 +19,7 @@ data class IdempotencyKey(
     val id: Long = 0,
     
     @Column(name = "tenant_id", nullable = false)
-    val tenantId: UUID,
+    val tenantId: Long,
     
     @Column(nullable = false, length = 255)
     val key: String,

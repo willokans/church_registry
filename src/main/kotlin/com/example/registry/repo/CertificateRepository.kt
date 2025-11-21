@@ -6,8 +6,8 @@ import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
-interface CertificateRepository : JpaRepository<Certificate, UUID> {
+interface CertificateRepository : JpaRepository<Certificate, Long> {
     fun findBySerialNo(serialNo: String): Certificate?
-    fun findAllByEventId(eventId: UUID): List<Certificate>
+    fun findAllByEventId(eventId: Long): List<Certificate>
 }
 

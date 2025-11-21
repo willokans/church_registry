@@ -6,8 +6,8 @@ import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
-interface ContentBlockRepository : JpaRepository<ContentBlock, UUID> {
-    fun findByTenantIdAndKey(tenantId: UUID, key: String): ContentBlock?
-    fun findAllByTenantId(tenantId: UUID): List<ContentBlock>
+interface ContentBlockRepository : JpaRepository<ContentBlock, Long> {
+    fun findByTenantIdAndKey(tenantId: Long, key: String): ContentBlock?
+    fun findAllByTenantId(tenantId: Long): List<ContentBlock>
 }
 

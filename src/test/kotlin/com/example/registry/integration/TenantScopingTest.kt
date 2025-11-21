@@ -30,10 +30,10 @@ class TenantScopingTest : BaseIntegrationTest() {
     @Autowired
     lateinit var sacramentEventRepository: SacramentEventRepository
     
-    private lateinit var tenant1: UUID
-    private lateinit var tenant2: UUID
-    private lateinit var user1: UUID
-    private lateinit var user2: UUID
+    private var tenant1: Long = 0
+    private var tenant2: Long = 0
+    private var user1: Long = 0
+    private var user2: Long = 0
     
     @BeforeEach
     @Transactional

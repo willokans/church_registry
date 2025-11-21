@@ -2,6 +2,7 @@ package com.example.registry.web.controller
 
 import com.example.registry.domain.SacramentType
 import com.example.registry.domain.Status
+import com.example.registry.repo.AppUserRepository
 import com.example.registry.service.IdempotencyService
 import com.example.registry.service.SacramentService
 import com.example.registry.tenancy.TenantContext
@@ -25,7 +26,8 @@ import java.util.*
 @RequestMapping("/sacraments")
 class SacramentController(
     private val sacramentService: SacramentService,
-    private val idempotencyService: IdempotencyService
+    private val idempotencyService: IdempotencyService,
+    private val appUserRepository: AppUserRepository
 ) {
     
     @GetMapping
@@ -42,10 +44,10 @@ class SacramentController(
         
         val sacramentType = type?.let { SacramentType.valueOf(it) }
         val sacramentStatus = status?.let { Status.valueOf(it) }
-        val cursorUuid = cursor?.let { UUID.fromString(it) }
+        val cursorLong = cursor?.toLongOrNull()
         
         val page = sacramentService.findAll(
-            tenantId, sacramentType, sacramentStatus, fromDate, toDate, cursorUuid, limit
+            tenantId, sacramentType, sacramentStatus, fromDate, toDate, cursorLong, limit
         )
         
         val dtos = page.content.map { event ->
@@ -102,7 +104,10 @@ class SacramentController(
         }
         
         val jwt = (authentication as JwtAuthenticationToken).token as Jwt
-        val createdBy = UUID.fromString(jwt.subject)
+        val email = jwt.claims["email"] as? String ?: jwt.subject
+        val currentUser = appUserRepository.findByEmail(email)
+            ?: throw NoSuchElementException("Current user not found")
+        val createdBy = currentUser.id
         
         // Note: Request body is already consumed by Spring, would need to use ContentCachingRequestWrapper in production
         val requestBody = "" // Simplified for now
@@ -142,13 +147,16 @@ class SacramentController(
     @PutMapping("/{id}")
     @PreAuthorize("hasPermission(@tenantContext.get(), 'sacraments.update')")
     fun updateSacrament(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: UpdateSacramentEventRequest,
         authentication: Authentication
     ): ResponseEntity<SacramentEventDto> {
         val tenantId = TenantContext.require()
         val jwt = (authentication as JwtAuthenticationToken).token as Jwt
-        val updatedBy = UUID.fromString(jwt.subject)
+        val email = jwt.claims["email"] as? String ?: jwt.subject
+        val currentUser = appUserRepository.findByEmail(email)
+            ?: throw NoSuchElementException("Current user not found")
+        val updatedBy = currentUser.id
         
         val event = sacramentService.update(
             id, tenantId, request.personId, request.date,
@@ -176,13 +184,16 @@ class SacramentController(
     @PostMapping("/{id}/status")
     @PreAuthorize("hasPermission(@tenantContext.get(), 'sacraments.update')")
     fun updateSacramentStatus(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: UpdateSacramentEventStatusRequest,
         authentication: Authentication
     ): ResponseEntity<Void> {
         val tenantId = TenantContext.require()
         val jwt = (authentication as JwtAuthenticationToken).token as Jwt
-        val updatedBy = UUID.fromString(jwt.subject)
+        val email = jwt.claims["email"] as? String ?: jwt.subject
+        val currentUser = appUserRepository.findByEmail(email)
+            ?: throw NoSuchElementException("Current user not found")
+        val updatedBy = currentUser.id
         
         val status = Status.valueOf(request.status)
         sacramentService.updateStatus(id, tenantId, status, request.reason, updatedBy)

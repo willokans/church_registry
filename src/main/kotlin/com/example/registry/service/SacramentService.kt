@@ -20,12 +20,12 @@ class SacramentService(
 ) {
     
     fun findAll(
-        tenantId: UUID,
+        tenantId: Long,
         type: SacramentType?,
         status: Status?,
         fromDate: LocalDate?,
         toDate: LocalDate?,
-        cursor: UUID?,
+        cursor: Long?,
         limit: Int = 20
     ): Page<SacramentEvent> {
         val pageable = PageRequest.of(0, limit, Sort.by("id").ascending())
@@ -34,19 +34,19 @@ class SacramentService(
         )
     }
     
-    fun findById(id: UUID): SacramentEvent? = sacramentEventRepository.findById(id).orElse(null)
+    fun findById(id: Long): SacramentEvent? = sacramentEventRepository.findById(id).orElse(null)
     
     @Transactional
     fun create(
-        tenantId: UUID,
+        tenantId: Long,
         type: SacramentType,
         personId: UUID,
         date: LocalDate,
-        ministerId: UUID?,
+        ministerId: Long?,
         bookNo: Int,
         pageNo: Int,
         entryNo: Int,
-        createdBy: UUID
+        createdBy: Long
     ): SacramentEvent {
         // Check for duplicate entry
         val existing = sacramentEventRepository.findByTenantIdAndTypeAndBookNoAndPageNoAndEntryNoAndStatus(
@@ -69,21 +69,21 @@ class SacramentService(
         )
         
         val saved = sacramentEventRepository.save(event)
-        auditService.log(tenantId, createdBy, "CREATE", "SacramentEvent", saved.id, null, saved)
+        auditService.log(tenantId, createdBy, "CREATE", "SacramentEvent", saved.id.toString(), null, saved)
         return saved
     }
     
     @Transactional
     fun update(
-        id: UUID,
-        tenantId: UUID,
+        id: Long,
+        tenantId: Long,
         personId: UUID?,
         date: LocalDate?,
-        ministerId: UUID?,
+        ministerId: Long?,
         bookNo: Int?,
         pageNo: Int?,
         entryNo: Int?,
-        updatedBy: UUID
+        updatedBy: Long
     ): SacramentEvent {
         val existing = sacramentEventRepository.findById(id)
             .orElseThrow { IllegalArgumentException("Sacrament event not found") }
@@ -108,17 +108,17 @@ class SacramentService(
         )
         
         val saved = sacramentEventRepository.save(updated)
-        auditService.log(tenantId, updatedBy, "UPDATE", "SacramentEvent", saved.id, existing, saved)
+        auditService.log(tenantId, updatedBy, "UPDATE", "SacramentEvent", saved.id.toString(), existing, saved)
         return saved
     }
     
     @Transactional
     fun updateStatus(
-        id: UUID,
-        tenantId: UUID,
+        id: Long,
+        tenantId: Long,
         status: Status,
         reason: String?,
-        updatedBy: UUID
+        updatedBy: Long
     ) {
         val existing = sacramentEventRepository.findById(id)
             .orElseThrow { IllegalArgumentException("Sacrament event not found") }
@@ -135,7 +135,7 @@ class SacramentService(
         )
         
         val saved = sacramentEventRepository.save(updated)
-        auditService.log(tenantId, updatedBy, "UPDATE_STATUS", "SacramentEvent", saved.id, existing, saved)
+        auditService.log(tenantId, updatedBy, "UPDATE_STATUS", "SacramentEvent", saved.id.toString(), existing, saved)
     }
 }
 

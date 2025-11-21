@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
-interface TenantRepository : JpaRepository<Tenant, UUID> {
+interface TenantRepository : JpaRepository<Tenant, Long> {
     fun findBySlug(slug: String): Tenant?
     fun existsBySlug(slug: String): Boolean
 }

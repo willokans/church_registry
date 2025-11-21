@@ -22,10 +22,10 @@ data class AuditLog(
     val id: Long = 0,
     
     @Column(name = "tenant_id")
-    val tenantId: UUID? = null,
+    val tenantId: Long? = null,
     
     @Column(name = "actor_id")
-    val actorId: UUID? = null,
+    val actorId: Long? = null,
     
     @Column(nullable = false, length = 50)
     val action: String,
@@ -33,8 +33,8 @@ data class AuditLog(
     @Column(nullable = false, length = 100)
     val entity: String,
     
-    @Column(name = "entity_id")
-    val entityId: UUID? = null,
+    @Column(name = "entity_id", length = 50)
+    val entityId: String? = null,
     
     @JdbcTypeCode(SqlTypes.JSON)
     @Column

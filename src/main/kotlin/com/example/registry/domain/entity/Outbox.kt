@@ -19,7 +19,7 @@ data class Outbox(
     val id: Long = 0,
     
     @Column(name = "tenant_id")
-    val tenantId: UUID? = null,
+    val tenantId: Long? = null,
     
     @Column(nullable = false, length = 100)
     val topic: String,

@@ -29,8 +29,8 @@ class SoftDeleteTest : BaseIntegrationTest() {
     @Autowired
     lateinit var sacramentEventRepository: SacramentEventRepository
     
-    private lateinit var tenantId: UUID
-    private lateinit var userId: UUID
+    private var tenantId: Long = 0
+    private var userId: Long = 0
     
     @BeforeEach
     @Transactional

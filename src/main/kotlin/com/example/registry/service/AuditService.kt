@@ -18,11 +18,11 @@ class AuditService(
     
     @Transactional
     fun log(
-        tenantId: UUID?,
-        actorId: UUID?,
+        tenantId: Long?,
+        actorId: Long?,
         action: String,
         entity: String,
-        entityId: UUID?,
+        entityId: String?,
         before: Any?,
         after: Any?
     ) {
@@ -61,7 +61,7 @@ class AuditService(
         auditLogRepository.save(auditLog)
     }
     
-    private fun getLastHash(tenantId: UUID?): String? {
+    private fun getLastHash(tenantId: Long?): String? {
         val lastLog = if (tenantId != null) {
             auditLogRepository.findAllByFilters(
                 tenantId = tenantId,

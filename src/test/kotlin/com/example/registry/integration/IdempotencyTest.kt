@@ -18,7 +18,7 @@ class IdempotencyTest : BaseIntegrationTest() {
     @Autowired
     lateinit var tenantRepository: TenantRepository
     
-    private lateinit var tenantId: UUID
+    private var tenantId: Long = 0
     
     @BeforeEach
     @Transactional

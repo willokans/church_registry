@@ -4,7 +4,7 @@ import java.time.Instant
 import java.util.*
 
 data class UserDto(
-    val id: UUID,
+    val id: Long,
     val email: String,
     val fullName: String,
     val mfaEnabled: Boolean,
@@ -13,13 +13,13 @@ data class UserDto(
 )
 
 data class MembershipDto(
-    val tenantId: UUID,
+    val tenantId: Long,
     val role: String,
     val status: String
 )
 
 data class UserProfileDto(
-    val id: UUID,
+    val id: Long,
     val email: String,
     val fullName: String,
     val mfaEnabled: Boolean,

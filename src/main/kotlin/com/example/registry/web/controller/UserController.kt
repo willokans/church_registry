@@ -27,12 +27,12 @@ class UserController(
     @GetMapping("/me")
     fun getCurrentUser(authentication: Authentication): ResponseEntity<UserProfileDto> {
         val jwt = (authentication as JwtAuthenticationToken).token as Jwt
-        val userId = UUID.fromString(jwt.subject)
+        // JWT subject might be UUID string or email - look up user by email first, then by subject
+        val email = jwt.claims["email"] as? String ?: jwt.subject
+        val user = appUserRepository.findByEmail(email)
+            ?: throw NoSuchElementException("User not found")
         
-        val user = appUserRepository.findById(userId)
-            .orElseThrow { NoSuchElementException("User not found") }
-        
-        val memberships = authorizationService.getMembershipsForUser(userId)
+        val memberships = authorizationService.getMembershipsForUser(user.id)
         val permissions = memberships.flatMap { membership ->
             authorizationService.getPermissionsForRole(membership.role)
         }.distinct()
@@ -77,7 +77,10 @@ class UserController(
     ): ResponseEntity<UserDto> {
         val tenantId = TenantContext.require()
         val jwt = (authentication as JwtAuthenticationToken).token as Jwt
-        val grantedBy = UUID.fromString(jwt.subject)
+        val email = jwt.claims["email"] as? String ?: jwt.subject
+        val currentUser = appUserRepository.findByEmail(email)
+            ?: throw NoSuchElementException("Current user not found")
+        val grantedBy = currentUser.id
         
         var user = userService.findByEmail(request.email)
         if (user == null) {
@@ -102,13 +105,16 @@ class UserController(
     @PostMapping("/{id}/role")
     @PreAuthorize("hasPermission(@tenantContext.get(), 'permissions.grant')")
     fun updateUserRole(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: UpdateUserRoleRequest,
         authentication: Authentication
     ): ResponseEntity<MembershipDto> {
         val tenantId = TenantContext.require()
         val jwt = (authentication as JwtAuthenticationToken).token as Jwt
-        val grantedBy = UUID.fromString(jwt.subject)
+        val email = jwt.claims["email"] as? String ?: jwt.subject
+        val currentUser = appUserRepository.findByEmail(email)
+            ?: throw NoSuchElementException("Current user not found")
+        val grantedBy = currentUser.id
         
         val role = Role.valueOf(request.role)
         val membership = userService.grantMembership(id, tenantId, role, grantedBy)
@@ -125,13 +131,16 @@ class UserController(
     @PostMapping("/{id}/status")
     @PreAuthorize("hasPermission(@tenantContext.get(), 'users.manage')")
     fun updateUserStatus(
-        @PathVariable id: UUID,
+        @PathVariable id: Long,
         @Valid @RequestBody request: UpdateUserStatusRequest,
         authentication: Authentication
     ): ResponseEntity<Void> {
         val tenantId = TenantContext.require()
         val jwt = (authentication as JwtAuthenticationToken).token as Jwt
-        val updatedBy = UUID.fromString(jwt.subject)
+        val email = jwt.claims["email"] as? String ?: jwt.subject
+        val currentUser = appUserRepository.findByEmail(email)
+            ?: throw NoSuchElementException("Current user not found")
+        val updatedBy = currentUser.id
         
         val status = Status.valueOf(request.status)
         userService.updateUserStatus(id, tenantId, status, request.reason, updatedBy)

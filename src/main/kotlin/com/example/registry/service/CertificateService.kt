@@ -17,12 +17,12 @@ class CertificateService(
         return certificateRepository.findBySerialNo(serialNo)
     }
     
-    fun findAllByEventId(eventId: UUID): List<Certificate> {
+    fun findAllByEventId(eventId: Long): List<Certificate> {
         return certificateRepository.findAllByEventId(eventId)
     }
     
     @Transactional
-    fun issue(eventId: UUID, issuerId: UUID): Certificate {
+    fun issue(eventId: Long, issuerId: Long): Certificate {
         val serialNo = UlidCreator.getUlid().toString()
         
         val certificate = Certificate(

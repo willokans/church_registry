@@ -14,11 +14,11 @@ import java.util.*
 )
 data class ContentBlock(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    val id: UUID = UUID.randomUUID(),
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
     
     @Column(name = "tenant_id", nullable = false)
-    val tenantId: UUID,
+    val tenantId: Long,
     
     @Column(nullable = false, length = 100)
     val key: String,

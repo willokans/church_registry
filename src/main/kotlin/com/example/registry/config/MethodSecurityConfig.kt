@@ -30,8 +30,8 @@ class MethodSecurityConfig(
                     permission: Any
                 ): Boolean {
                     val tenantId = when (targetDomainObject) {
-                        is java.util.UUID -> targetDomainObject
-                        is String -> try { java.util.UUID.fromString(targetDomainObject) } catch (e: Exception) { return false }
+                        is Long -> targetDomainObject
+                        is String -> try { targetDomainObject.toLong() } catch (e: Exception) { return false }
                         else -> TenantContext.get() ?: return false
                     }
                     val perm = permission.toString()

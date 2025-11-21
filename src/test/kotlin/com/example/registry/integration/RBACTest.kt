@@ -27,9 +27,9 @@ class RBACTest : BaseIntegrationTest() {
     @Autowired
     lateinit var tenantRepository: TenantRepository
     
-    private lateinit var tenantId: UUID
-    private lateinit var adminUserId: UUID
-    private lateinit var viewerUserId: UUID
+    private var tenantId: Long = 0
+    private var adminUserId: Long = 0
+    private var viewerUserId: Long = 0
     
     @BeforeEach
     @Transactional
@@ -72,17 +72,18 @@ class RBACTest : BaseIntegrationTest() {
     
     @Test
     fun `should deny access for users without membership`() {
-        val otherUserId = UUID.randomUUID()
+        val otherUserId = 999L
         val otherJwt = createJwt(otherUserId)
         val otherAuth = JwtAuthenticationToken(otherJwt)
         
         assertThat(authorizationService.can(tenantId, "sacraments.view", otherAuth)).isFalse()
     }
     
-    private fun createJwt(userId: UUID): Jwt {
+    private fun createJwt(userId: Long): Jwt {
         return Jwt.withTokenValue("test-token")
             .header("alg", "RS256")
             .claim("sub", userId.toString())
+            .claim("email", "user$userId@test.com") // Add email claim for lookup
             .claim("jti", UUID.randomUUID().toString())
             .issuedAt(Instant.now())
             .expiresAt(Instant.now().plusSeconds(3600))

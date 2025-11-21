@@ -4,8 +4,8 @@ import java.time.Instant
 import java.util.*
 
 data class ContentBlockDto(
-    val id: UUID,
-    val tenantId: UUID,
+    val id: Long,
+    val tenantId: Long,
     val key: String,
     val published: Map<String, Any>?,
     val updatedAt: Instant

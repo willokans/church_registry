@@ -31,13 +31,12 @@ class AuditController(
     ): ResponseEntity<CursorPage<AuditLogDto>> {
         val tenantId = TenantContext.require()
         
-        val actorUuid = actorId?.let { UUID.fromString(it) }
-        val entityUuid = entityId?.let { UUID.fromString(it) }
+        val actorLong = actorId?.toLongOrNull()
         val cursorLong = cursor?.toLongOrNull()
         
         val pageable = PageRequest.of(0, limit, Sort.by("id").ascending())
         val page = auditLogRepository.findAllByFilters(
-            tenantId, actorUuid, entity, entityUuid, fromTs, toTs, cursorLong, pageable
+            tenantId, actorLong, entity, entityId, fromTs, toTs, cursorLong, pageable
         )
         
         val dtos = page.content.map { log ->

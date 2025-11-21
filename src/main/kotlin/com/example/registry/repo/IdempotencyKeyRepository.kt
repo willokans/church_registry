@@ -11,7 +11,7 @@ import java.util.*
 
 @Repository
 interface IdempotencyKeyRepository : JpaRepository<IdempotencyKey, Long> {
-    fun findByTenantIdAndKey(tenantId: UUID, key: String): IdempotencyKey?
+    fun findByTenantIdAndKey(tenantId: Long, key: String): IdempotencyKey?
     
     @Modifying
     @Query("DELETE FROM IdempotencyKey i WHERE i.createdAt < :cutoff")

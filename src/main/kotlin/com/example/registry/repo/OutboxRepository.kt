@@ -18,7 +18,7 @@ interface OutboxRepository : JpaRepository<Outbox, Long> {
         ORDER BY o.createdAt ASC
     """)
     fun findPendingMessages(
-        @Param("tenantId") tenantId: UUID?,
+        @Param("tenantId") tenantId: Long?,
         @Param("before") before: Instant,
         limit: org.springframework.data.domain.Pageable
     ): List<Outbox>

@@ -15,11 +15,11 @@ import java.util.*
 )
 data class Certificate(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    val id: UUID = UUID.randomUUID(),
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
     
     @Column(name = "event_id", nullable = false)
-    val eventId: UUID,
+    val eventId: Long,
     
     @Column(name = "serial_no", nullable = false, unique = true, length = 26)
     val serialNo: String, // ULID
@@ -28,7 +28,7 @@ data class Certificate(
     val issuedAt: Instant = Instant.now(),
     
     @Column(name = "issuer_id", nullable = false)
-    val issuerId: UUID,
+    val issuerId: Long,
     
     @Enumerated(EnumType.STRING)
     @Column(name = "revocation_status", nullable = false, length = 20)

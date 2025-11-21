@@ -32,7 +32,7 @@ class SecurityConfig(
                 auth
                     .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                     .requestMatchers("/public/**").permitAll()
-                    .requestMatchers("/certificates/**/verify").permitAll()
+                    .requestMatchers("/certificates/*/verify").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").authenticated()
                     .anyRequest().authenticated()

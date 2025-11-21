@@ -31,14 +31,14 @@ class H2DataInitializer(
 ) : ApplicationListener<ApplicationReadyEvent> {
     
     override fun onApplicationEvent(event: ApplicationReadyEvent) {
-        // Force table creation using Hibernate SchemaExport, then seed data
+        // Force table creation using direct DDL, then seed data
         Thread {
             try {
                 // Force table creation programmatically
-                forceTableCreationViaSchemaExport()
+                forceTableCreationViaDirectDDL()
                 
-                // Wait a moment for tables to be fully created
-                Thread.sleep(2000)
+                // Wait a moment for tables to be fully created and committed
+                Thread.sleep(3000)
                 
                 // Now seed data
                 seedDataIfNeeded()
@@ -49,226 +49,257 @@ class H2DataInitializer(
         }.start()
     }
     
-    private fun forceTableCreationViaSchemaExport() {
-        // The root issue: Entities have default UUID values, so persist() fails with "detached entity"
-        // Native SQL INSERT doesn't trigger Hibernate DDL
-        // Solution: Use entityManager.merge() which will INSERT if entity doesn't exist
-        // But merge() tries to SELECT first, which fails if table doesn't exist
-        // 
-        // The real fix: Execute CREATE TABLE statements directly using the exact DDL
-        // that Hibernate would generate. We'll use Session.doWork() to execute DDL.
-        
-        val transactionTemplate = TransactionTemplate(transactionManager)
-        transactionTemplate.propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
+    private fun forceTableCreationViaDirectDDL() {
+        // Execute CREATE TABLE statements directly using raw JDBC connection
+        // H2 requires DDL to be executed in auto-commit mode, outside of Spring transactions
         
         try {
-            transactionTemplate.executeWithoutResult {
-                val em = EntityManagerFactoryUtils.getTransactionalEntityManager(entityManagerFactory)
-                em?.let { entityManager ->
-                    val session = entityManager.unwrap(org.hibernate.Session::class.java)
+            val em = entityManagerFactory.createEntityManager()
+            val session = em.unwrap(org.hibernate.Session::class.java)
+            
+            session.doWork { connection ->
+                // H2 requires DDL to be executed in auto-commit mode
+                val originalAutoCommit = connection.autoCommit
+                connection.autoCommit = true
+                
+                val statement = connection.createStatement()
+                val tablesCreated = mutableListOf<String>()
+                
+                try {
+                    // Execute CREATE TABLE statements directly
+                    // These match what Hibernate would generate for our entities
                     
-                    session.doWork { connection ->
-                        val statement = connection.createStatement()
-                        val tablesCreated = mutableListOf<String>()
-                        
-                        try {
-                            // Execute CREATE TABLE statements directly
-                            // These match what Hibernate would generate for our entities
-                            
-                            // 1. tenants
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS tenants (
-                                        id UUID PRIMARY KEY,
-                                        slug VARCHAR(100) NOT NULL UNIQUE,
-                                        name VARCHAR(200) NOT NULL,
-                                        parent_id UUID,
-                                        theme VARCHAR(255),
-                                        created_at TIMESTAMP(0) NOT NULL
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("tenants")
-                            } catch (e: Exception) {
-                                // Table might already exist
-                            }
-                            
-                            // 2. permissions
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS permissions (
-                                        "key" VARCHAR(100) PRIMARY KEY
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("permissions")
-                            } catch (e: Exception) {}
-                            
-                            // 3. role_permissions
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS role_permissions (
-                                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                        role VARCHAR(50) NOT NULL,
-                                        permission_key VARCHAR(100) NOT NULL,
-                                        UNIQUE(role, permission_key)
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("role_permissions")
-                            } catch (e: Exception) {}
-                            
-                            // 4. app_users
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS app_users (
-                                        id UUID PRIMARY KEY,
-                                        email VARCHAR(255) NOT NULL UNIQUE,
-                                        full_name VARCHAR(200) NOT NULL,
-                                        mfa_enabled BOOLEAN NOT NULL,
-                                        status VARCHAR(20) NOT NULL,
-                                        created_at TIMESTAMP(0) NOT NULL
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("app_users")
-                            } catch (e: Exception) {}
-                            
-                            // 5. memberships
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS memberships (
-                                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                        user_id UUID NOT NULL,
-                                        tenant_id UUID NOT NULL,
-                                        role VARCHAR(50) NOT NULL,
-                                        status VARCHAR(20) NOT NULL,
-                                        granted_at TIMESTAMP(0) NOT NULL,
-                                        granted_by UUID
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("memberships")
-                            } catch (e: Exception) {}
-                            
-                            // 6. content_blocks
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS content_blocks (
-                                        id UUID PRIMARY KEY,
-                                        tenant_id UUID NOT NULL,
-                                        "key" VARCHAR(100) NOT NULL,
-                                        content TEXT,
-                                        updated_at TIMESTAMP(0) NOT NULL
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("content_blocks")
-                            } catch (e: Exception) {}
-                            
-                            // 7. sacrament_events
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS sacrament_events (
-                                        id UUID PRIMARY KEY,
-                                        tenant_id UUID NOT NULL,
-                                        type VARCHAR(50) NOT NULL,
-                                        person_id UUID NOT NULL,
-                                        date DATE NOT NULL,
-                                        minister_id UUID,
-                                        book_no INTEGER NOT NULL,
-                                        page_no INTEGER NOT NULL,
-                                        entry_no INTEGER NOT NULL,
-                                        status VARCHAR(20) NOT NULL,
-                                        created_by UUID NOT NULL,
-                                        created_at TIMESTAMP(0) NOT NULL,
-                                        updated_by UUID,
-                                        updated_at TIMESTAMP(0),
-                                        deactivated_at TIMESTAMP(0),
-                                        deactivated_by UUID,
-                                        deactivation_reason VARCHAR(500)
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("sacrament_events")
-                            } catch (e: Exception) {}
-                            
-                            // 8. certificates
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS certificates (
-                                        id UUID PRIMARY KEY,
-                                        event_id UUID NOT NULL,
-                                        serial_no VARCHAR(26) NOT NULL,
-                                        issued_at TIMESTAMP(0) NOT NULL,
-                                        issuer_id UUID NOT NULL,
-                                        revocation_status VARCHAR(20) NOT NULL
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("certificates")
-                            } catch (e: Exception) {}
-                            
-                            // 9. audit_logs
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS audit_logs (
-                                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                        tenant_id UUID,
-                                        actor_id UUID NOT NULL,
-                                        action VARCHAR(100) NOT NULL,
-                                        entity VARCHAR(100) NOT NULL,
-                                        entity_id UUID,
-                                        "before" VARCHAR(255),
-                                        "after" VARCHAR(255),
-                                        hash VARCHAR(64),
-                                        prev_hash VARCHAR(64),
-                                        ts TIMESTAMP(0) NOT NULL
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("audit_logs")
-                            } catch (e: Exception) {}
-                            
-                            // 10. idempotency_keys
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS idempotency_keys (
-                                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                        tenant_id UUID NOT NULL,
-                                        "key" VARCHAR(255) NOT NULL,
-                                        request_hash VARCHAR(64),
-                                        response_code INTEGER,
-                                        created_at TIMESTAMP(0) NOT NULL
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("idempotency_keys")
-                            } catch (e: Exception) {}
-                            
-                            // 11. outbox
-                            try {
-                                statement.execute("""
-                                    CREATE TABLE IF NOT EXISTS outbox (
-                                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                        tenant_id UUID,
-                                        topic VARCHAR(100) NOT NULL,
-                                        payload TEXT NOT NULL,
-                                        status VARCHAR(50) NOT NULL,
-                                        created_at TIMESTAMP(0) NOT NULL,
-                                        published_at TIMESTAMP(0),
-                                        retry_count INTEGER NOT NULL,
-                                        error_message VARCHAR(1000)
-                                    )
-                                """.trimIndent())
-                                tablesCreated.add("outbox")
-                            } catch (e: Exception) {}
-                            
-                            if (tablesCreated.isNotEmpty()) {
-                                println("✓ Created ${tablesCreated.size} tables via DDL: ${tablesCreated.joinToString(", ")}")
-                            }
-                            
-                        } finally {
-                            statement.close()
-                        }
+                    // 1. tenants
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS tenants (
+                                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                slug VARCHAR(100) NOT NULL UNIQUE,
+                                name VARCHAR(200) NOT NULL,
+                                parent_id BIGINT,
+                                theme VARCHAR(255),
+                                created_at TIMESTAMP(0) NOT NULL
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("tenants")
+                        println("✓ Created table: tenants")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating tenants table: ${e.message}")
+                        e.printStackTrace()
                     }
+                            
+                    // 2. permissions
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS permissions (
+                                "key" VARCHAR(100) PRIMARY KEY
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("permissions")
+                        println("✓ Created table: permissions")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating permissions table: ${e.message}")
+                    }
+                            
+                    // 3. role_permissions
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS role_permissions (
+                                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                role VARCHAR(50) NOT NULL,
+                                permission_key VARCHAR(100) NOT NULL,
+                                UNIQUE(role, permission_key)
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("role_permissions")
+                        println("✓ Created table: role_permissions")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating role_permissions table: ${e.message}")
+                    }
+                            
+                    // 4. app_users
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS app_users (
+                                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                email VARCHAR(255) NOT NULL UNIQUE,
+                                full_name VARCHAR(200) NOT NULL,
+                                mfa_enabled BOOLEAN NOT NULL,
+                                status VARCHAR(20) NOT NULL,
+                                created_at TIMESTAMP(0) NOT NULL
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("app_users")
+                        println("✓ Created table: app_users")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating app_users table: ${e.message}")
+                    }
+                    
+                    // 5. memberships
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS memberships (
+                                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                user_id BIGINT NOT NULL,
+                                tenant_id BIGINT NOT NULL,
+                                role VARCHAR(50) NOT NULL,
+                                status VARCHAR(20) NOT NULL,
+                                granted_at TIMESTAMP(0) NOT NULL,
+                                granted_by BIGINT
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("memberships")
+                        println("✓ Created table: memberships")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating memberships table: ${e.message}")
+                    }
+                    
+                    // 6. content_blocks
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS content_blocks (
+                                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                tenant_id BIGINT NOT NULL,
+                                "key" VARCHAR(100) NOT NULL,
+                                content TEXT,
+                                updated_at TIMESTAMP(0) NOT NULL
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("content_blocks")
+                        println("✓ Created table: content_blocks")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating content_blocks table: ${e.message}")
+                    }
+                    
+                    // 7. sacrament_events
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS sacrament_events (
+                                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                tenant_id BIGINT NOT NULL,
+                                type VARCHAR(50) NOT NULL,
+                                person_id UUID NOT NULL,
+                                date DATE NOT NULL,
+                                minister_id BIGINT,
+                                book_no INTEGER NOT NULL,
+                                page_no INTEGER NOT NULL,
+                                entry_no INTEGER NOT NULL,
+                                status VARCHAR(20) NOT NULL,
+                                created_by BIGINT NOT NULL,
+                                created_at TIMESTAMP(0) NOT NULL,
+                                updated_by BIGINT,
+                                updated_at TIMESTAMP(0),
+                                deactivated_at TIMESTAMP(0),
+                                deactivated_by BIGINT,
+                                deactivation_reason VARCHAR(500)
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("sacrament_events")
+                        println("✓ Created table: sacrament_events")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating sacrament_events table: ${e.message}")
+                    }
+                    
+                    // 8. certificates
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS certificates (
+                                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                event_id BIGINT NOT NULL,
+                                serial_no VARCHAR(26) NOT NULL,
+                                issued_at TIMESTAMP(0) NOT NULL,
+                                issuer_id BIGINT NOT NULL,
+                                revocation_status VARCHAR(20) NOT NULL
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("certificates")
+                        println("✓ Created table: certificates")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating certificates table: ${e.message}")
+                    }
+                    
+                    // 9. audit_logs
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS audit_logs (
+                                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                tenant_id BIGINT,
+                                actor_id BIGINT NOT NULL,
+                                action VARCHAR(100) NOT NULL,
+                                entity VARCHAR(100) NOT NULL,
+                                entity_id VARCHAR(50),
+                                "before" VARCHAR(255),
+                                "after" VARCHAR(255),
+                                hash VARCHAR(64),
+                                prev_hash VARCHAR(64),
+                                ts TIMESTAMP(0) NOT NULL
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("audit_logs")
+                        println("✓ Created table: audit_logs")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating audit_logs table: ${e.message}")
+                    }
+                    
+                    // 10. idempotency_keys
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS idempotency_keys (
+                                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                tenant_id BIGINT NOT NULL,
+                                "key" VARCHAR(255) NOT NULL,
+                                request_hash VARCHAR(64),
+                                response_code INTEGER,
+                                created_at TIMESTAMP(0) NOT NULL
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("idempotency_keys")
+                        println("✓ Created table: idempotency_keys")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating idempotency_keys table: ${e.message}")
+                    }
+                    
+                    // 11. outbox
+                    try {
+                        statement.execute("""
+                            CREATE TABLE IF NOT EXISTS outbox (
+                                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                tenant_id BIGINT,
+                                topic VARCHAR(100) NOT NULL,
+                                payload TEXT NOT NULL,
+                                status VARCHAR(50) NOT NULL,
+                                created_at TIMESTAMP(0) NOT NULL,
+                                published_at TIMESTAMP(0),
+                                retry_count INTEGER NOT NULL,
+                                error_message VARCHAR(1000)
+                            )
+                        """.trimIndent())
+                        tablesCreated.add("outbox")
+                        println("✓ Created table: outbox")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Error creating outbox table: ${e.message}")
+                    }
+                    
+                    if (tablesCreated.isNotEmpty()) {
+                        println("✓ Successfully created ${tablesCreated.size} tables via DDL: ${tablesCreated.joinToString(", ")}")
+                    } else {
+                        println("⚠ No tables were created - they may already exist")
+                    }
+                    
+                } catch (e: Exception) {
+                    System.err.println("⚠ Error during table creation: ${e.message}")
+                    e.printStackTrace()
+                    throw e
+                } finally {
+                    statement.close()
+                    connection.autoCommit = originalAutoCommit
                 }
             }
+            em.close()
         } catch (e: Exception) {
             System.err.println("⚠ Could not create tables via DDL: ${e.message}")
             e.printStackTrace()
-            // Fallback: try native SQL approach
-            forceTableCreationViaQueries()
+            throw e
         }
     }
     
@@ -281,9 +312,9 @@ class H2DataInitializer(
                 val em = EntityManagerFactoryUtils.getTransactionalEntityManager(entityManagerFactory)
                 em?.let { entityManager ->
                     val tablesCreated = mutableListOf<String>()
-                    var dummyTenantId: UUID? = null
-                    var dummyUserId: UUID? = null
-                    var dummyEventId: UUID? = null
+                    var dummyTenantId: Long? = null
+                    var dummyUserId: Long? = null
+                    var dummyEventId: Long? = null
                     
                     // Create and delete dummy entities to trigger table creation
                     // Order matters for entities with dependencies
@@ -306,8 +337,8 @@ class H2DataInitializer(
                     } catch (e: Exception) {
                         System.err.println("⚠ Failed to create tenants table: ${e.message}")
                         e.printStackTrace()
-                        // Use random UUID as fallback
-                        dummyTenantId = UUID.randomUUID()
+                        // Use 1L as fallback
+                        dummyTenantId = 1L
                     }
                     
                     // 2. Permission (no dependencies)
@@ -351,15 +382,15 @@ class H2DataInitializer(
                     } catch (e: Exception) {
                         System.err.println("⚠ Failed to create app_users table: ${e.message}")
                         e.printStackTrace()
-                        // Use random UUID as fallback
-                        if (dummyUserId == null) dummyUserId = UUID.randomUUID()
+                        // Use 1L as fallback
+                        if (dummyUserId == null) dummyUserId = 1L
                     }
                     
                     // 5. Membership (depends on AppUser and Tenant) - Use random UUIDs for FK if entities don't exist
                     try {
                         val dummy = Membership(
-                            userId = dummyUserId ?: UUID.randomUUID(),
-                            tenantId = dummyTenantId ?: UUID.randomUUID(),
+                            userId = dummyUserId ?: 1L,
+                            tenantId = dummyTenantId ?: 1L,
                             role = Role.VIEWER,
                             status = Status.ACTIVE,
                             grantedAt = Instant.now()
@@ -377,7 +408,7 @@ class H2DataInitializer(
                     // 6. ContentBlock (depends on Tenant)
                     try {
                         val dummy = ContentBlock(
-                            tenantId = dummyTenantId ?: UUID.randomUUID(),
+                            tenantId = dummyTenantId ?: 1L,
                             key = "__dummy__",
                             updatedAt = Instant.now()
                         )
@@ -395,7 +426,7 @@ class H2DataInitializer(
                     // 7. SacramentEvent (depends on Tenant)
                     try {
                         val dummy = SacramentEvent(
-                            tenantId = dummyTenantId ?: UUID.randomUUID(),
+                            tenantId = dummyTenantId ?: 1L,
                             type = SacramentType.BAPTISM,
                             personId = UUID.randomUUID(),
                             date = LocalDate.now(),
@@ -403,7 +434,7 @@ class H2DataInitializer(
                             pageNo = 1,
                             entryNo = 1,
                             status = Status.ACTIVE,
-                            createdBy = dummyUserId ?: UUID.randomUUID(),
+                            createdBy = dummyUserId ?: 1L,
                             createdAt = Instant.now()
                         )
                         entityManager.persist(dummy)
@@ -420,10 +451,10 @@ class H2DataInitializer(
                     // 8. Certificate (depends on SacramentEvent)
                     try {
                         val dummy = Certificate(
-                            eventId = dummyEventId ?: UUID.randomUUID(),
+                            eventId = dummyEventId ?: 1L,
                             serialNo = "01" + "0".repeat(24), // ULID format
                             issuedAt = Instant.now(),
-                            issuerId = dummyUserId ?: UUID.randomUUID(),
+                            issuerId = dummyUserId ?: 1L,
                             revocationStatus = RevocationStatus.ACTIVE
                         )
                         entityManager.persist(dummy)
@@ -440,11 +471,11 @@ class H2DataInitializer(
                     // 9. AuditLog (no strict dependencies)
                     try {
                         val dummy = AuditLog(
-                            tenantId = dummyTenantId ?: UUID.randomUUID(),
-                            actorId = dummyUserId ?: UUID.randomUUID(),
+                            tenantId = dummyTenantId ?: 1L,
+                            actorId = dummyUserId ?: 1L,
                             action = "__dummy__",
                             entity = "__dummy__",
-                            entityId = UUID.randomUUID(),
+                            entityId = "1",
                             ts = Instant.now()
                         )
                         entityManager.persist(dummy)
@@ -459,7 +490,7 @@ class H2DataInitializer(
                     // 10. IdempotencyKey (depends on Tenant)
                     try {
                         val dummy = IdempotencyKey(
-                            tenantId = dummyTenantId ?: UUID.randomUUID(),
+                            tenantId = dummyTenantId ?: 1L,
                             key = "__dummy__",
                             createdAt = Instant.now()
                         )
@@ -475,7 +506,7 @@ class H2DataInitializer(
                     // 11. Outbox (no strict dependencies)
                     try {
                         val dummy = Outbox(
-                            tenantId = dummyTenantId ?: UUID.randomUUID(),
+                            tenantId = dummyTenantId ?: 1L,
                             topic = "__dummy__",
                             payload = "{}",
                             status = "PENDING",
@@ -733,15 +764,14 @@ class H2DataInitializer(
     }
     
     private fun seedData() {
-        // Create sample tenant
+        // Create sample tenant (ID will be auto-generated by IDENTITY)
         val tenant = Tenant(
-            id = UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),
             slug = "sample-parish",
             name = "Sample Parish",
             theme = mapOf("primaryColor" to "#0066cc", "logo" to "/logo.png"),
             createdAt = Instant.now()
         )
-        tenantRepository.save(tenant)
+        val savedTenant = tenantRepository.save(tenant)
         
         // Create permissions
         val permissions = listOf(

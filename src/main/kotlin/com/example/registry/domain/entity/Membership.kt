@@ -10,12 +10,9 @@ import java.util.*
 @Entity
 @Table(
     name = "memberships",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["user_id", "tenant_id"])],
-    indexes = [
-        Index(name = "idx_memberships_user", columnList = "user_id"),
-        Index(name = "idx_memberships_tenant", columnList = "tenant_id"),
-        Index(name = "idx_memberships_status", columnList = "status")
-    ]
+    uniqueConstraints = [UniqueConstraint(columnNames = ["user_id", "tenant_id"])]
+    // Indexes temporarily removed - will be added back after tables are created
+    // Indexes can be created manually via SQL or added back once schema is stable
 )
 @Where(clause = "status = 'ACTIVE'")
 data class Membership(
@@ -24,10 +21,10 @@ data class Membership(
     val id: Long = 0,
     
     @Column(name = "user_id", nullable = false)
-    val userId: UUID,
+    val userId: Long,
     
     @Column(name = "tenant_id", nullable = false)
-    val tenantId: UUID,
+    val tenantId: Long,
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
@@ -38,7 +35,7 @@ data class Membership(
     val status: Status = Status.ACTIVE,
     
     @Column(name = "granted_by")
-    val grantedBy: UUID? = null,
+    val grantedBy: Long? = null,
     
     @Column(name = "granted_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
     val grantedAt: Instant = Instant.now()

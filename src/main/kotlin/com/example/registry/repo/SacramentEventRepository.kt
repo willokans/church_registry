@@ -13,8 +13,8 @@ import java.time.LocalDate
 import java.util.*
 
 @Repository
-interface SacramentEventRepository : JpaRepository<SacramentEvent, UUID> {
-    fun findAllByTenantId(tenantId: UUID, pageable: Pageable): Page<SacramentEvent>
+interface SacramentEventRepository : JpaRepository<SacramentEvent, Long> {
+    fun findAllByTenantId(tenantId: Long, pageable: Pageable): Page<SacramentEvent>
     
     @Query("""
         SELECT e FROM SacramentEvent e 
@@ -27,17 +27,17 @@ interface SacramentEventRepository : JpaRepository<SacramentEvent, UUID> {
         ORDER BY e.id ASC
     """)
     fun findAllByFilters(
-        @Param("tenantId") tenantId: UUID,
+        @Param("tenantId") tenantId: Long,
         @Param("type") type: SacramentType?,
         @Param("status") status: Status?,
         @Param("fromDate") fromDate: LocalDate?,
         @Param("toDate") toDate: LocalDate?,
-        @Param("cursor") cursor: UUID?,
+        @Param("cursor") cursor: Long?,
         pageable: Pageable
     ): Page<SacramentEvent>
     
     fun findByTenantIdAndTypeAndBookNoAndPageNoAndEntryNoAndStatus(
-        tenantId: UUID,
+        tenantId: Long,
         type: SacramentType,
         bookNo: Int,
         pageNo: Int,

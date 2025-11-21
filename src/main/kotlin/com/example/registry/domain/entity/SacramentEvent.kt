@@ -15,11 +15,11 @@ import java.util.*
 @Where(clause = "status = 'ACTIVE'")
 data class SacramentEvent(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    val id: UUID = UUID.randomUUID(),
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
     
     @Column(name = "tenant_id", nullable = false)
-    val tenantId: UUID,
+    val tenantId: Long,
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
@@ -32,7 +32,7 @@ data class SacramentEvent(
     val date: LocalDate,
     
     @Column(name = "minister_id")
-    val ministerId: UUID? = null,
+    val ministerId: Long? = null,
     
     @Column(name = "book_no", nullable = false)
     val bookNo: Int,
@@ -48,13 +48,13 @@ data class SacramentEvent(
     val status: Status = Status.ACTIVE,
     
     @Column(name = "created_by", nullable = false)
-    val createdBy: UUID,
+    val createdBy: Long,
     
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
     val createdAt: Instant = Instant.now(),
     
     @Column(name = "updated_by")
-    val updatedBy: UUID? = null,
+    val updatedBy: Long? = null,
     
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP(0)")
     val updatedAt: Instant? = null,
@@ -63,7 +63,7 @@ data class SacramentEvent(
     val deactivatedAt: Instant? = null,
     
     @Column(name = "deactivated_by")
-    val deactivatedBy: UUID? = null,
+    val deactivatedBy: Long? = null,
     
     @Column(name = "deactivation_reason", length = 500)
     val deactivationReason: String? = null

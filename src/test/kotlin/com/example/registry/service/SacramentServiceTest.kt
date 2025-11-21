@@ -20,9 +20,9 @@ class SacramentServiceTest : BaseIntegrationTest() {
     
     @Test
     fun `should create sacrament event`() {
-        val tenantId = UUID.randomUUID()
+        val tenantId = 1L
         val personId = UUID.randomUUID()
-        val createdBy = UUID.randomUUID()
+        val createdBy = 1L
         
         val event = sacramentService.create(
             tenantId = tenantId,
@@ -44,9 +44,9 @@ class SacramentServiceTest : BaseIntegrationTest() {
     
     @Test
     fun `should prevent duplicate entries`() {
-        val tenantId = UUID.randomUUID()
+        val tenantId = 1L
         val personId = UUID.randomUUID()
-        val createdBy = UUID.randomUUID()
+        val createdBy = 1L
         
         sacramentService.create(
             tenantId, SacramentType.BAPTISM, personId, LocalDate.now(),

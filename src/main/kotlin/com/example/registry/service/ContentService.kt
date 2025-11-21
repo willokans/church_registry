@@ -13,16 +13,16 @@ class ContentService(
     private val auditService: AuditService
 ) {
     
-    fun findByTenantAndKey(tenantId: UUID, key: String): ContentBlock? {
+    fun findByTenantAndKey(tenantId: Long, key: String): ContentBlock? {
         return contentBlockRepository.findByTenantIdAndKey(tenantId, key)
     }
     
-    fun findAllByTenant(tenantId: UUID): List<ContentBlock> {
+    fun findAllByTenant(tenantId: Long): List<ContentBlock> {
         return contentBlockRepository.findAllByTenantId(tenantId)
     }
     
     @Transactional
-    fun publish(tenantId: UUID, key: String, content: Map<String, Any>, updatedBy: UUID?): ContentBlock {
+    fun publish(tenantId: Long, key: String, content: Map<String, Any>, updatedBy: Long?): ContentBlock {
         val existing = contentBlockRepository.findByTenantIdAndKey(tenantId, key)
         
         val block = if (existing != null) {
@@ -40,12 +40,12 @@ class ContentService(
         }
         
         val saved = contentBlockRepository.save(block)
-        auditService.log(tenantId, updatedBy, "PUBLISH", "ContentBlock", saved.id, existing, saved)
+        auditService.log(tenantId, updatedBy, "PUBLISH", "ContentBlock", saved.id.toString(), existing, saved)
         return saved
     }
     
     @Transactional
-    fun saveDraft(tenantId: UUID, key: String, content: Map<String, Any>, updatedBy: UUID?): ContentBlock {
+    fun saveDraft(tenantId: Long, key: String, content: Map<String, Any>, updatedBy: Long?): ContentBlock {
         val existing = contentBlockRepository.findByTenantIdAndKey(tenantId, key)
         
         val block = if (existing != null) {
@@ -63,7 +63,7 @@ class ContentService(
         }
         
         val saved = contentBlockRepository.save(block)
-        auditService.log(tenantId, updatedBy, "SAVE_DRAFT", "ContentBlock", saved.id, existing, saved)
+        auditService.log(tenantId, updatedBy, "SAVE_DRAFT", "ContentBlock", saved.id.toString(), existing, saved)
         return saved
     }
 }

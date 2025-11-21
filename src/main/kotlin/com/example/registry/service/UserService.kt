@@ -17,11 +17,11 @@ class UserService(
     private val auditService: AuditService
 ) {
     
-    fun findById(id: UUID): AppUser? = appUserRepository.findById(id).orElse(null)
+    fun findById(id: Long): AppUser? = appUserRepository.findById(id).orElse(null)
     
     fun findByEmail(email: String): AppUser? = appUserRepository.findByEmail(email)
     
-    fun findAllByTenant(tenantId: UUID): List<AppUser> {
+    fun findAllByTenant(tenantId: Long): List<AppUser> {
         val memberships = membershipRepository.findAllByTenantId(tenantId)
         val userIds = memberships.map { it.userId }.toSet()
         return appUserRepository.findAllById(userIds)
@@ -39,16 +39,16 @@ class UserService(
         )
         
         val saved = appUserRepository.save(user)
-        auditService.log(null, null, "CREATE", "AppUser", saved.id, null, saved)
+        auditService.log(null, null, "CREATE", "AppUser", saved.id.toString(), null, saved)
         return saved
     }
     
     @Transactional
     fun grantMembership(
-        userId: UUID,
-        tenantId: UUID,
+        userId: Long,
+        tenantId: Long,
         role: Role,
-        grantedBy: UUID
+        grantedBy: Long
     ): Membership {
         val existing = membershipRepository.findByUserIdAndTenantId(userId, tenantId)
         if (existing != null) {
@@ -75,11 +75,11 @@ class UserService(
     
     @Transactional
     fun updateUserStatus(
-        userId: UUID,
-        tenantId: UUID,
+        userId: Long,
+        tenantId: Long,
         status: Status,
         reason: String?,
-        updatedBy: UUID
+        updatedBy: Long
     ) {
         val user = appUserRepository.findById(userId)
             .orElseThrow { IllegalArgumentException("User not found") }
@@ -89,7 +89,7 @@ class UserService(
         val saved = appUserRepository.save(updated)
         
         auditService.log(
-            tenantId, updatedBy, "UPDATE_STATUS", "AppUser", saved.id,
+            tenantId, updatedBy, "UPDATE_STATUS", "AppUser", saved.id.toString(),
             before, saved
         )
     }

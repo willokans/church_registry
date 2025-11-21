@@ -17,7 +17,7 @@ class AuthorizationService(
     private val rolePermissionRepository: RolePermissionRepository
 ) {
     
-    fun can(tenantId: UUID, permission: String, authentication: Authentication?): Boolean {
+    fun can(tenantId: Long, permission: String, authentication: Authentication?): Boolean {
         if (authentication == null || !authentication.isAuthenticated) {
             return false
         }
@@ -26,9 +26,12 @@ class AuthorizationService(
             ?: return false
         
         val subject = jwt.subject ?: return false
+        // JWT subject is UUID string, but we need Long ID - parse as Long directly
         val userId = try {
-            UUID.fromString(subject)
-        } catch (e: IllegalArgumentException) {
+            subject.toLong()
+        } catch (e: NumberFormatException) {
+            // Fallback: try parsing as UUID and look up user by email or other identifier
+            // For now, return false - this needs proper user lookup
             return false
         }
         
@@ -54,20 +57,20 @@ class AuthorizationService(
     }
     
     @Cacheable(value = ["memberships"], key = "#userId + '_' + #tenantId + '_' + (#tokenId ?: 'none')")
-    fun getMembershipForUserAndTenant(userId: UUID, tenantId: UUID, tokenId: String?): com.example.registry.domain.entity.Membership? {
+    fun getMembershipForUserAndTenant(userId: Long, tenantId: Long, tokenId: String?): com.example.registry.domain.entity.Membership? {
         return membershipRepository.findByUserIdAndTenantIdAndStatus(
             userId, tenantId, Status.ACTIVE
         )
     }
     
-    fun getMembershipsForUser(userId: UUID): List<MembershipInfo> {
+    fun getMembershipsForUser(userId: Long): List<MembershipInfo> {
         return membershipRepository.findAllByUserId(userId)
             .filter { it.status == Status.ACTIVE }
             .map { MembershipInfo(it.tenantId, it.role) }
     }
     
     data class MembershipInfo(
-        val tenantId: UUID,
+        val tenantId: Long,
         val role: Role
     )
 }

@@ -5,12 +5,12 @@ import java.time.LocalDate
 import java.util.*
 
 data class SacramentEventDto(
-    val id: UUID,
-    val tenantId: UUID,
+    val id: Long,
+    val tenantId: Long,
     val type: String,
     val personId: UUID,
     val date: LocalDate,
-    val ministerId: UUID?,
+    val ministerId: Long?,
     val bookNo: Int,
     val pageNo: Int,
     val entryNo: Int,
@@ -23,7 +23,7 @@ data class CreateSacramentEventRequest(
     val type: String,
     val personId: UUID,
     val date: LocalDate,
-    val ministerId: UUID?,
+    val ministerId: Long?,
     val bookNo: Int,
     val pageNo: Int,
     val entryNo: Int
@@ -32,7 +32,7 @@ data class CreateSacramentEventRequest(
 data class UpdateSacramentEventRequest(
     val personId: UUID?,
     val date: LocalDate?,
-    val ministerId: UUID?,
+    val ministerId: Long?,
     val bookNo: Int?,
     val pageNo: Int?,
     val entryNo: Int?

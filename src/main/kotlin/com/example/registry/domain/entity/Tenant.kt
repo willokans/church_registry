@@ -10,8 +10,8 @@ import java.util.*
 @Table(name = "tenants")
 data class Tenant(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    val id: UUID = UUID.randomUUID(),
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
     
     @Column(nullable = false, unique = true, length = 100)
     val slug: String,
@@ -20,7 +20,7 @@ data class Tenant(
     val name: String,
     
     @Column(name = "parent_id")
-    val parentId: UUID? = null,
+    val parentId: Long? = null,
     
     @JdbcTypeCode(SqlTypes.JSON)
     @Column

@@ -17,7 +17,7 @@ class IdempotencyService(
 ) {
     
     fun checkAndStore(
-        tenantId: UUID,
+        tenantId: Long,
         key: String,
         requestBody: String?
     ): IdempotencyResult {
@@ -48,7 +48,7 @@ class IdempotencyService(
     }
     
     @Transactional
-    fun recordResponse(tenantId: UUID, key: String, responseCode: Int) {
+    fun recordResponse(tenantId: Long, key: String, responseCode: Int) {
         val existing = idempotencyKeyRepository.findByTenantIdAndKey(tenantId, key)
         if (existing != null) {
             val updated = existing.copy(responseCode = responseCode)

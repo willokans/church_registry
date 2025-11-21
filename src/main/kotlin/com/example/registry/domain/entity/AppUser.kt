@@ -14,8 +14,8 @@ import java.util.*
 @Where(clause = "status = 'ACTIVE'")
 data class AppUser(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    val id: UUID = UUID.randomUUID(),
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
     
     @Column(nullable = false, unique = true, length = 255)
     val email: String, // CITEXT in PostgreSQL (handled by Liquibase), VARCHAR in H2

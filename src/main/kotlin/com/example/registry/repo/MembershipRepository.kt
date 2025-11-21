@@ -9,10 +9,10 @@ import java.util.*
 
 @Repository
 interface MembershipRepository : JpaRepository<Membership, Long> {
-    fun findByUserIdAndTenantId(userId: UUID, tenantId: UUID): Membership?
-    fun findByUserIdAndTenantIdAndStatus(userId: UUID, tenantId: UUID, status: Status): Membership?
-    fun findAllByTenantId(tenantId: UUID): List<Membership>
-    fun findAllByUserId(userId: UUID): List<Membership>
-    fun findAllByTenantIdAndRole(tenantId: UUID, role: Role): List<Membership>
+    fun findByUserIdAndTenantId(userId: Long, tenantId: Long): Membership?
+    fun findByUserIdAndTenantIdAndStatus(userId: Long, tenantId: Long, status: Status): Membership?
+    fun findAllByTenantId(tenantId: Long): List<Membership>
+    fun findAllByUserId(userId: Long): List<Membership>
+    fun findAllByTenantIdAndRole(tenantId: Long, role: Role): List<Membership>
 }
 

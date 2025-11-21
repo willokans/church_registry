@@ -1,6 +1,7 @@
 package com.example.registry.web.controller
 
 import com.example.registry.domain.entity.ContentBlock
+import com.example.registry.repo.AppUserRepository
 import com.example.registry.security.AuthorizationService
 import com.example.registry.service.ContentService
 import com.example.registry.tenancy.TenantContext
@@ -19,7 +20,8 @@ import java.util.*
 @RequestMapping("/admin/content")
 class ContentController(
     private val contentService: ContentService,
-    private val authorizationService: AuthorizationService
+    private val authorizationService: AuthorizationService,
+    private val appUserRepository: AppUserRepository
 ) {
     
     @PostMapping("/{key}/publish")
@@ -31,7 +33,10 @@ class ContentController(
     ): ResponseEntity<ContentBlockDto> {
         val tenantId = TenantContext.require()
         val jwt = (authentication as JwtAuthenticationToken).token as Jwt
-        val updatedBy = UUID.fromString(jwt.subject)
+        val email = jwt.claims["email"] as? String ?: jwt.subject
+        val currentUser = appUserRepository.findByEmail(email)
+            ?: throw NoSuchElementException("Current user not found")
+        val updatedBy = currentUser.id
         
         val block = contentService.publish(tenantId, key, request.content, updatedBy)
         

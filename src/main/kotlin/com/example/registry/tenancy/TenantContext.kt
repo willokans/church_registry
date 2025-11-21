@@ -1,20 +1,18 @@
 package com.example.registry.tenancy
 
-import java.util.*
-
 object TenantContext {
-    private val tenantId = ThreadLocal<UUID?>()
+    private val tenantId = ThreadLocal<Long?>()
     
-    fun set(tenantId: UUID?) {
+    fun set(tenantId: Long?) {
         this.tenantId.set(tenantId)
     }
     
-    fun get(): UUID? = tenantId.get()
+    fun get(): Long? = tenantId.get()
     
     fun clear() {
         tenantId.remove()
     }
     
-    fun require(): UUID = get() ?: throw IllegalStateException("No tenant context available")
+    fun require(): Long = get() ?: throw IllegalStateException("No tenant context available")
 }
 
