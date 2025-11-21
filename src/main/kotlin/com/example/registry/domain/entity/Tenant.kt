@@ -4,11 +4,13 @@ import jakarta.persistence.*
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 @Entity
 @Table(name = "tenants")
 data class Tenant(
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
@@ -27,6 +29,6 @@ data class Tenant(
     val theme: Map<String, Any>? = null,
     
     @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now()
+    val createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.SECONDS)
 )
 

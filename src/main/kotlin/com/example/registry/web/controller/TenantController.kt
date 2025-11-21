@@ -13,14 +13,14 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/admin/tenants")
-class TenantController(
+open class TenantController(
     private val tenantService: TenantService,
     private val appUserRepository: AppUserRepository
 ) {
     
     @GetMapping
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    fun getAllTenants(): ResponseEntity<List<TenantDto>> {
+    open fun getAllTenants(): ResponseEntity<List<TenantDto>> {
         val tenants = tenantService.findAll()
         
         val dtos = tenants.map { tenant ->
@@ -39,7 +39,7 @@ class TenantController(
     
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    fun getTenantById(@PathVariable id: Long): ResponseEntity<TenantDto> {
+    open fun getTenantById(@PathVariable id: Long): ResponseEntity<TenantDto> {
         val tenant = tenantService.findById(id)
             ?: throw NoSuchElementException("Tenant not found")
         
@@ -56,7 +56,7 @@ class TenantController(
     }
     
     @GetMapping("/slug/{slug}")
-    fun getTenantBySlug(@PathVariable slug: String): ResponseEntity<TenantDto> {
+    open fun getTenantBySlug(@PathVariable slug: String): ResponseEntity<TenantDto> {
         val tenant = tenantService.findBySlug(slug)
             ?: throw NoSuchElementException("Tenant not found")
         
@@ -73,7 +73,7 @@ class TenantController(
     }
     
     @PostMapping
-    fun createTenant(
+    open fun createTenant(
         @Valid @RequestBody request: CreateTenantRequest,
         authentication: Authentication?
     ): ResponseEntity<TenantDto> {
@@ -108,7 +108,7 @@ class TenantController(
     
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    fun updateTenant(
+    open fun updateTenant(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateTenantRequest,
         authentication: Authentication

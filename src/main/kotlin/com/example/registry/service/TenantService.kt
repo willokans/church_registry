@@ -6,19 +6,19 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class TenantService(
+open class TenantService(
     private val tenantRepository: TenantRepository,
     private val auditService: AuditService
 ) {
     
-    fun findById(id: Long): Tenant? = tenantRepository.findById(id).orElse(null)
+    open fun findById(id: Long): Tenant? = tenantRepository.findById(id).orElse(null)
     
-    fun findBySlug(slug: String): Tenant? = tenantRepository.findBySlug(slug)
+    open fun findBySlug(slug: String): Tenant? = tenantRepository.findBySlug(slug)
     
-    fun findAll(): List<Tenant> = tenantRepository.findAll()
+    open fun findAll(): List<Tenant> = tenantRepository.findAll()
     
     @Transactional
-    fun createTenant(
+    open fun createTenant(
         slug: String,
         name: String,
         parentId: Long? = null,
@@ -48,7 +48,7 @@ class TenantService(
     }
     
     @Transactional
-    fun updateTenant(
+    open fun updateTenant(
         id: Long,
         name: String? = null,
         parentId: Long? = null,
