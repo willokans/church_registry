@@ -27,7 +27,8 @@ echo ""
 
 export SPRING_PROFILES_ACTIVE=h2,dev
 export STORAGE_TYPE=local
-export JWT_ISSUER_URI=https://dev-issuer.example.com/.well-known/openid-configuration
+# Don't set JWT_ISSUER_URI for H2 mode - use mock decoder instead
+unset JWT_ISSUER_URI
 export JWT_AUDIENCE=registry-api
 
 mvn spring-boot:run

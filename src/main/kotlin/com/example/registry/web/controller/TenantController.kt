@@ -113,11 +113,14 @@ class TenantController(
         @Valid @RequestBody request: UpdateTenantRequest,
         authentication: Authentication
     ): ResponseEntity<TenantDto> {
-        val jwt = (authentication as JwtAuthenticationToken).token as Jwt
-        val email = jwt.claims["email"] as? String ?: jwt.subject
-        val currentUser = appUserRepository.findByEmail(email)
-            ?: throw NoSuchElementException("Current user not found")
-        val updatedBy = currentUser.id
+        // Get current user ID if authenticated and user exists, otherwise null
+        val updatedBy = try {
+            val jwt = (authentication as? JwtAuthenticationToken)?.token
+            val email = jwt?.claims?.get("email") as? String ?: jwt?.subject
+            email?.let { appUserRepository.findByEmail(it)?.id }
+        } catch (e: Exception) {
+            null
+        }
         
         val tenant = tenantService.updateTenant(
             id = id,

@@ -35,6 +35,14 @@ spring:
     init:
       mode: never # Disable Spring SQL init (runs too early)
 
+  # JWT configuration: H2SecurityConfig provides a mock JwtDecoder for local development
+  # Disable issuer-uri to prevent Spring Security from auto-configuring a real JWT decoder
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "" # Empty to disable auto-configuration, use mock decoder instead
+
 logging:
   level:
     org.hibernate.SQL: DEBUG
@@ -44,5 +52,3 @@ logging:
 app:
   storage:
     type: local
-# JWT configuration: H2SecurityConfig provides a mock JwtDecoder for local development
-# No issuer-uri needed - the mock decoder accepts any token

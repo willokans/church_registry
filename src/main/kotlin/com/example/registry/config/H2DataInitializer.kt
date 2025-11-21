@@ -27,6 +27,7 @@ class H2DataInitializer(
     private val permissionRepository: PermissionRepository,
     private val rolePermissionRepository: RolePermissionRepository,
     private val sacramentEventRepository: SacramentEventRepository,
+    private val userService: com.example.registry.service.UserService,
     private val entityManagerFactory: EntityManagerFactory,
     private val transactionManager: PlatformTransactionManager
 ) : ApplicationListener<ApplicationReadyEvent> {
@@ -818,6 +819,37 @@ class H2DataInitializer(
         }
         
         rolePermissionRepository.saveAll(rolePermissions)
+        
+        // Create dummy test users for each role for Postman/testing
+        val testUsers = listOf(
+            Triple("super-admin@test.com", "Super Admin User", Role.SUPER_ADMIN),
+            Triple("parish-admin@test.com", "Parish Admin User", Role.PARISH_ADMIN),
+            Triple("registrar@test.com", "Registrar User", Role.REGISTRAR),
+            Triple("priest@test.com", "Priest User", Role.PRIEST),
+            Triple("viewer@test.com", "Viewer User", Role.VIEWER)
+        )
+        
+        testUsers.forEach { (email, fullName, role) ->
+            try {
+                val user = userService.createUser(
+                    email = email,
+                    fullName = fullName
+                )
+                
+                // Grant membership to the tenant with the appropriate role
+                userService.grantMembership(
+                    userId = user.id,
+                    tenantId = savedTenant1.id,
+                    role = role,
+                    grantedBy = user.id
+                )
+                
+                println("✓ Created test user: $email (ID: ${user.id}) with ${role.name} role")
+            } catch (e: Exception) {
+                // User might already exist, that's okay
+                println("⚠ Test user $email might already exist: ${e.message}")
+            }
+        }
     }
 }
 

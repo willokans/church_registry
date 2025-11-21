@@ -13,7 +13,21 @@ class JwtAuthenticationConverter(
     
     override fun convert(jwt: Jwt): JwtAuthenticationToken {
         val authorities = authoritiesConverter.convert(jwt)?.toMutableList() ?: mutableListOf()
-        // Add any custom authorities from JWT claims if needed
+        
+        // Extract roles from JWT claims and add as ROLE_* authorities
+        // Check for "roles" claim (list or single value)
+        val roles = when (val rolesClaim = jwt.claims["roles"]) {
+            is List<*> -> rolesClaim.mapNotNull { it?.toString() }
+            is String -> listOf(rolesClaim)
+            else -> emptyList()
+        }
+        
+        // Add ROLE_* authorities for Spring Security hasRole() checks
+        roles.forEach { role ->
+            val roleName = role.uppercase().replace("-", "_")
+            authorities.add(SimpleGrantedAuthority("ROLE_$roleName"))
+        }
+        
         return JwtAuthenticationToken(jwt, authorities)
     }
 }
