@@ -23,7 +23,7 @@ import java.time.LocalDate
 import java.util.*
 
 @RestController
-@RequestMapping("/sacraments")
+@RequestMapping("/api/sacraments")
 class SacramentController(
     private val sacramentService: SacramentService,
     private val idempotencyService: IdempotencyService,

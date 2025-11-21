@@ -13,7 +13,7 @@ import java.time.Instant
 import java.util.*
 
 @RestController
-@RequestMapping("/audit")
+@RequestMapping("/api/audit")
 class AuditController(
     private val auditLogRepository: AuditLogRepository
 ) {

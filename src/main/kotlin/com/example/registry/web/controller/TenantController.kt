@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/admin/tenants")
+@RequestMapping("/api/admin/tenants")
 open class TenantController(
     private val tenantService: TenantService,
     private val appUserRepository: AppUserRepository

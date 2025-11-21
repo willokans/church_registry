@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/public")
+@RequestMapping("/api/public")
 class PublicController(
     private val tenantRepository: TenantRepository,
     private val contentService: ContentService

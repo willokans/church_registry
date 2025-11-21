@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/certificates")
+@RequestMapping("/api/certificates")
 class CertificateController(
     private val certificateService: CertificateService
 ) {

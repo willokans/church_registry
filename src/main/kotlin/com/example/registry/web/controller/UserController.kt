@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
-@RequestMapping("/admin/users")
+@RequestMapping("/api/admin/users")
 class UserController(
     private val userService: UserService,
     private val appUserRepository: AppUserRepository,

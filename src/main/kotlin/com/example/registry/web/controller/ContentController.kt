@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
-@RequestMapping("/admin/content")
+@RequestMapping("/api/admin/content")
 class ContentController(
     private val contentService: ContentService,
     private val authorizationService: AuthorizationService,
