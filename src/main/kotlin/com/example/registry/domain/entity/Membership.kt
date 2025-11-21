@@ -43,6 +43,12 @@ data class Membership(
     val grantedBy: Long? = null,
     
     @Column(name = "granted_at", nullable = false, updatable = false)
-    val grantedAt: Instant = Instant.now()
-)
+    val grantedAt: Instant = Instant.now(),
+    
+    @Column(name = "expires_at")
+    val expiresAt: Instant? = null
+) {
+    // Helper method to check if membership has expired
+    fun isExpired(): Boolean = expiresAt != null && expiresAt.isBefore(Instant.now())
+}
 

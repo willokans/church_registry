@@ -58,14 +58,16 @@ class AuthorizationService(
     
     @Cacheable(value = ["memberships"], key = "#userId + '_' + #tenantId + '_' + (#tokenId ?: 'none')")
     fun getMembershipForUserAndTenant(userId: Long, tenantId: Long, tokenId: String?): com.example.registry.domain.entity.Membership? {
-        return membershipRepository.findByUserIdAndTenantIdAndStatus(
+        val membership = membershipRepository.findByUserIdAndTenantIdAndStatus(
             userId, tenantId, Status.ACTIVE
         )
+        // Return null if membership is expired
+        return if (membership?.isExpired() == true) null else membership
     }
     
     fun getMembershipsForUser(userId: Long): List<MembershipInfo> {
         return membershipRepository.findAllByUserId(userId)
-            .filter { it.status == Status.ACTIVE }
+            .filter { it.status == Status.ACTIVE && !it.isExpired() }
             .map { MembershipInfo(it.tenantId, it.role) }
     }
     
