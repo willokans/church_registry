@@ -10,14 +10,9 @@ import java.util.*
  * then published asynchronously by a separate process.
  */
 @Entity
-@Table(
-    name = "outbox",
-    indexes = [
-        Index(name = "idx_outbox_tenant", columnList = "tenant_id"),
-        Index(name = "idx_outbox_status", columnList = "status"),
-        Index(name = "idx_outbox_created", columnList = "created_at")
-    ]
-)
+@Table(name = "outbox")
+// Indexes temporarily removed - will be added back after tables are created
+// Indexes can be created manually via SQL or added back once schema is stable
 data class Outbox(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

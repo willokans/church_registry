@@ -7,7 +7,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create # Create tables on first access (lazy creation)
+      ddl-auto: create-drop # Create all tables eagerly at startup, drop on shutdown
     show-sql: true
     properties:
       hibernate:

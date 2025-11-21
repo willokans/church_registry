@@ -17,8 +17,8 @@ data class AppUser(
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID = UUID.randomUUID(),
     
-    @Column(nullable = false, unique = true, columnDefinition = "CITEXT")
-    val email: String,
+    @Column(nullable = false, unique = true, length = 255)
+    val email: String, // CITEXT in PostgreSQL (handled by Liquibase), VARCHAR in H2
     
     @Column(name = "full_name", nullable = false, length = 200)
     val fullName: String,
