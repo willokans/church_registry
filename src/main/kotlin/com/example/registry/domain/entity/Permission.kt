@@ -13,6 +13,9 @@ data class Permission(
     val description: String? = null,
     
     @Column(name = "category", length = 50) // e.g., "users", "sacraments", "settings"
-    val category: String? = null
+    val category: String? = null,
+    
+    @Column(name = "parent_key", length = 100)
+    val parentKey: String? = null // For hierarchical permissions, e.g., "sacraments.*" → "sacraments.create", "sacraments.update"
 )
 

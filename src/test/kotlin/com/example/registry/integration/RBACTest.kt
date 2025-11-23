@@ -70,7 +70,8 @@ class RBACTest : BaseIntegrationTest() {
                 permissionRepository.save(com.example.registry.domain.entity.Permission(
                     key = key,
                     description = null,
-                    category = null
+                    category = null,
+                    parentKey = null
                 ))
             }
         }
