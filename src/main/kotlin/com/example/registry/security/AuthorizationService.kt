@@ -4,6 +4,7 @@ import com.example.registry.domain.Role
 import com.example.registry.domain.Status
 import com.example.registry.repo.AppUserRepository
 import com.example.registry.repo.MembershipRepository
+import com.example.registry.repo.PermissionRepository
 import com.example.registry.repo.RolePermissionRepository
 import com.example.registry.repo.TenantRolePermissionRepository
 import org.springframework.cache.annotation.CacheEvict
@@ -19,7 +20,8 @@ class AuthorizationService(
     private val membershipRepository: MembershipRepository,
     private val rolePermissionRepository: RolePermissionRepository,
     private val tenantRolePermissionRepository: TenantRolePermissionRepository,
-    private val appUserRepository: AppUserRepository
+    private val appUserRepository: AppUserRepository,
+    private val permissionRepository: PermissionRepository
 ) {
     
     fun can(tenantId: Long, permission: String, authentication: Authentication?): Boolean {
@@ -85,6 +87,58 @@ class AuthorizationService(
         return membershipRepository.findAllByUserId(userId)
             .filter { it.status == Status.ACTIVE && !it.isExpired() }
             .map { MembershipInfo(it.tenantId, it.role) }
+    }
+    
+    /**
+     * Get permission groups for UI organization.
+     * Groups permissions by their category for better display in admin interfaces.
+     */
+    fun getPermissionGroups(role: Role): List<com.example.registry.domain.PermissionGroup> {
+        val permissions = getPermissionsForRole(role)
+        
+        // Group permissions by category using Permission entities
+        val grouped = permissions.groupBy { permissionKey ->
+            permissionRepository.findById(permissionKey).orElse(null)
+                ?.category
+                ?: inferCategoryFromKey(permissionKey)
+        }
+        
+        return grouped.map { (category, permKeys) ->
+            com.example.registry.domain.PermissionGroup(
+                name = getGroupName(category),
+                permissions = permKeys.sorted()
+            )
+        }.sortedBy { it.name }
+    }
+    
+    /**
+     * Infer permission category from permission key pattern.
+     * This is a fallback when Permission entity is not found.
+     */
+    private fun inferCategoryFromKey(key: String): com.example.registry.domain.PermissionCategory {
+        return when {
+            key.startsWith("users.") || key.startsWith("permissions.") -> 
+                com.example.registry.domain.PermissionCategory.USERS
+            key.startsWith("sacraments.") -> 
+                com.example.registry.domain.PermissionCategory.SACRAMENTS
+            key.startsWith("settings.") -> 
+                com.example.registry.domain.PermissionCategory.SETTINGS
+            key.startsWith("audit.") -> 
+                com.example.registry.domain.PermissionCategory.AUDIT
+            else -> com.example.registry.domain.PermissionCategory.USERS
+        }
+    }
+    
+    /**
+     * Get human-readable group name from category.
+     */
+    private fun getGroupName(category: com.example.registry.domain.PermissionCategory): String {
+        return when (category) {
+            com.example.registry.domain.PermissionCategory.USERS -> "User Management"
+            com.example.registry.domain.PermissionCategory.SACRAMENTS -> "Sacraments"
+            com.example.registry.domain.PermissionCategory.SETTINGS -> "Settings"
+            com.example.registry.domain.PermissionCategory.AUDIT -> "Audit"
+        }
     }
     
     /**
