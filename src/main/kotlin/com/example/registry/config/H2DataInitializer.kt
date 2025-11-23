@@ -28,6 +28,8 @@ class H2DataInitializer(
     private val rolePermissionRepository: RolePermissionRepository,
     private val sacramentEventRepository: SacramentEventRepository,
     private val userService: com.example.registry.service.UserService,
+    private val appUserRepository: AppUserRepository,
+    private val membershipRepository: MembershipRepository,
     private val entityManagerFactory: EntityManagerFactory,
     private val transactionManager: PlatformTransactionManager
 ) : ApplicationListener<ApplicationReadyEvent> {
@@ -572,6 +574,8 @@ class H2DataInitializer(
                 } else {
                     println("✓ H2 database already has data (${count} tenants)")
                 }
+                // Always ensure super-admin has memberships to all tenants (runs on every startup)
+                ensureSuperAdminMemberships()
                 return // Success - exit the method
             } catch (e: Exception) {
                 if (e.message?.contains("Table") == true && e.message?.contains("not found") == true) {
@@ -918,6 +922,71 @@ class H2DataInitializer(
                 // User might already exist, that's okay
                 println("⚠ Test user $email might already exist: ${e.message}")
             }
+        }
+        
+        // Grant SUPER_ADMIN membership to ALL tenants for super-admin user
+        ensureSuperAdminMemberships()
+    }
+    
+    /**
+     * Ensures super-admin user has memberships to all tenants.
+     * This runs both during initial seeding and on every startup to handle new tenants.
+     */
+    @Transactional
+    private fun ensureSuperAdminMemberships() {
+        try {
+            println("🔍 Checking super-admin memberships...")
+            val superAdminUser = appUserRepository.findByEmail("super-admin@test.com")
+            if (superAdminUser != null) {
+                println("✓ Found super-admin user: ${superAdminUser.email} (ID: ${superAdminUser.id})")
+                val allTenants = tenantRepository.findAll()
+                println("✓ Found ${allTenants.size} tenant(s)")
+                
+                allTenants.forEach { tenant ->
+                    try {
+                        // Check if membership already exists (using findByUserIdAndTenantId which doesn't check status)
+                        val existingMembership = membershipRepository.findByUserIdAndTenantId(
+                            superAdminUser.id,
+                            tenant.id
+                        )
+                        
+                        if (existingMembership == null) {
+                            println("  → Granting SUPER_ADMIN membership to tenant: ${tenant.slug} (ID: ${tenant.id})")
+                            userService.grantMembership(
+                                userId = superAdminUser.id,
+                                tenantId = tenant.id,
+                                role = Role.SUPER_ADMIN,
+                                grantedBy = superAdminUser.id
+                            )
+                            println("  ✓ Granted SUPER_ADMIN membership to tenant: ${tenant.slug} (ID: ${tenant.id})")
+                        } else {
+                            // Update existing membership to ensure it's active and has SUPER_ADMIN role
+                            if (existingMembership.status != com.example.registry.domain.Status.ACTIVE || 
+                                existingMembership.role != Role.SUPER_ADMIN) {
+                                println("  → Updating membership for tenant: ${tenant.slug} (ID: ${tenant.id})")
+                                userService.grantMembership(
+                                    userId = superAdminUser.id,
+                                    tenantId = tenant.id,
+                                    role = Role.SUPER_ADMIN,
+                                    grantedBy = superAdminUser.id
+                                )
+                                println("  ✓ Updated membership for tenant: ${tenant.slug} (ID: ${tenant.id})")
+                            } else {
+                                println("  ✓ Membership already exists for tenant: ${tenant.slug} (ID: ${tenant.id})")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Membership might already exist or other error
+                        println("  ⚠ Could not grant membership to tenant ${tenant.slug}: ${e.message}")
+                        e.printStackTrace()
+                    }
+                }
+            } else {
+                println("⚠ Super-admin user not found, skipping membership grants")
+            }
+        } catch (e: Exception) {
+            println("⚠ Could not grant SUPER_ADMIN memberships to all tenants: ${e.message}")
+            e.printStackTrace()
         }
     }
 }

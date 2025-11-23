@@ -71,6 +71,7 @@ class UserController(
     
     @PostMapping("/invite")
     @PreAuthorize("hasPermission(@tenantContext.get(), 'users.manage')")
+    // Invites a user to a tenant
     fun inviteUser(
         @Valid @RequestBody request: InviteUserRequest,
         authentication: Authentication
