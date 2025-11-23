@@ -4,6 +4,7 @@ import com.example.registry.domain.Role
 import com.example.registry.domain.Status
 import com.example.registry.repo.MembershipRepository
 import com.example.registry.repo.RolePermissionRepository
+import com.example.registry.repo.TenantRolePermissionRepository
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.jwt.Jwt
@@ -14,7 +15,8 @@ import java.util.*
 @Service
 class AuthorizationService(
     private val membershipRepository: MembershipRepository,
-    private val rolePermissionRepository: RolePermissionRepository
+    private val rolePermissionRepository: RolePermissionRepository,
+    private val tenantRolePermissionRepository: TenantRolePermissionRepository
 ) {
     
     fun can(tenantId: Long, permission: String, authentication: Authentication?): Boolean {
@@ -45,6 +47,13 @@ class AuthorizationService(
             return true
         }
         
+        // Check tenant-specific permissions first (these override global role permissions)
+        val tenantPermission = getTenantRolePermission(tenantId, membership.role, permission)
+        if (tenantPermission != null) {
+            return tenantPermission.granted
+        }
+        
+        // Fall back to global role permissions
         val permissions = getPermissionsForRole(membership.role)
         return permissions.contains(permission)
     }
@@ -54,6 +63,11 @@ class AuthorizationService(
         return rolePermissionRepository.findAllByRole(role)
             .map { it.permissionKey }
             .toSet()
+    }
+    
+    @Cacheable(value = ["tenant-role-permissions"], key = "#tenantId + '_' + #role + '_' + #permissionKey")
+    fun getTenantRolePermission(tenantId: Long, role: Role, permissionKey: String): com.example.registry.domain.entity.TenantRolePermission? {
+        return tenantRolePermissionRepository.findByTenantIdAndRoleAndPermissionKey(tenantId, role, permissionKey)
     }
     
     @Cacheable(value = ["memberships"], key = "#userId + '_' + #tenantId + '_' + (#tokenId ?: 'none')")

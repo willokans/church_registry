@@ -366,6 +366,22 @@ class H2DataInitializer(
                         System.err.println("⚠ Failed to create role_permissions table: ${e.message}")
                     }
                     
+                    // 3b. TenantRolePermission (depends on Permission and Tenant)
+                    try {
+                        val dummy = com.example.registry.domain.entity.TenantRolePermission(
+                            tenantId = dummyTenantId ?: 1L,
+                            role = Role.VIEWER,
+                            permissionKey = "__dummy__",
+                            granted = true
+                        )
+                        entityManager.persist(dummy)
+                        entityManager.flush()
+                        entityManager.remove(dummy)
+                        tablesCreated.add("tenant_role_permissions")
+                    } catch (e: Exception) {
+                        System.err.println("⚠ Failed to create tenant_role_permissions table: ${e.message}")
+                    }
+                    
                     // 4. AppUser (no dependencies) - Note: CITEXT not supported in H2, will use VARCHAR
                     try {
                         val dummy = AppUser(
