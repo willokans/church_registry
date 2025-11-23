@@ -2,6 +2,7 @@ package com.example.registry.security
 
 import com.example.registry.domain.Role
 import com.example.registry.domain.Status
+import com.example.registry.repo.AppUserRepository
 import com.example.registry.repo.MembershipRepository
 import com.example.registry.repo.RolePermissionRepository
 import com.example.registry.repo.TenantRolePermissionRepository
@@ -17,7 +18,8 @@ import java.util.*
 class AuthorizationService(
     private val membershipRepository: MembershipRepository,
     private val rolePermissionRepository: RolePermissionRepository,
-    private val tenantRolePermissionRepository: TenantRolePermissionRepository
+    private val tenantRolePermissionRepository: TenantRolePermissionRepository,
+    private val appUserRepository: AppUserRepository
 ) {
     
     fun can(tenantId: Long, permission: String, authentication: Authentication?): Boolean {
@@ -29,14 +31,13 @@ class AuthorizationService(
             ?: return false
         
         val subject = jwt.subject ?: return false
-        // JWT subject is UUID string, but we need Long ID - parse as Long directly
-        val userId = try {
-            subject.toLong()
-        } catch (e: NumberFormatException) {
-            // Fallback: try parsing as UUID and look up user by email or other identifier
-            // For now, return false - this needs proper user lookup
-            return false
-        }
+        
+        // Extract user ID from JWT subject
+        // Subject can be either:
+        // 1. Long ID (numeric string) - parse directly
+        // 2. Email address - look up user by email
+        // 3. Other identifier - check email claim or return false
+        val userId = extractUserIdFromJwt(jwt, subject) ?: return false
         
         // Cache membership lookup per token ID (jti claim)
         val tokenId = jwt.id ?: jwt.subject
@@ -84,6 +85,37 @@ class AuthorizationService(
         return membershipRepository.findAllByUserId(userId)
             .filter { it.status == Status.ACTIVE && !it.isExpired() }
             .map { MembershipInfo(it.tenantId, it.role) }
+    }
+    
+    /**
+     * Extract user ID from JWT token.
+     * Handles multiple formats:
+     * - Long ID (numeric string): parses directly
+     * - Email address: looks up user by email
+     * - Other: checks email claim in JWT
+     */
+    private fun extractUserIdFromJwt(jwt: Jwt, subject: String): Long? {
+        // Try parsing as Long ID first (most common case)
+        val userId = try {
+            subject.toLong()
+        } catch (e: NumberFormatException) {
+            null
+        }
+        if (userId != null) {
+            return userId
+        }
+        
+        // If subject is not a Long, try to extract email
+        val email = when {
+            // Subject itself is an email (contains @)
+            subject.contains("@") -> subject
+            // Check email claim in JWT
+            jwt.claims["email"] is String -> jwt.claims["email"] as String
+            else -> null
+        }
+        
+        // Look up user by email
+        return email?.let { appUserRepository.findByEmail(it)?.id }
     }
     
     /**
