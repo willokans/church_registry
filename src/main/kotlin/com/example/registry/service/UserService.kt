@@ -7,6 +7,7 @@ import com.example.registry.domain.entity.Membership
 import com.example.registry.repo.AppUserRepository
 import com.example.registry.repo.MembershipRepository
 import com.example.registry.security.AuthorizationService
+import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -16,7 +17,8 @@ class UserService(
     private val appUserRepository: AppUserRepository,
     private val membershipRepository: MembershipRepository,
     private val auditService: AuditService,
-    private val authorizationService: AuthorizationService
+    private val authorizationService: AuthorizationService,
+    private val entityManager: EntityManager
 ) {
     
     fun findById(id: Long): AppUser? = appUserRepository.findById(id).orElse(null)
@@ -87,8 +89,18 @@ class UserService(
         reason: String?,
         updatedBy: Long
     ) {
-        val user = appUserRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+        // Use native query to bypass @Where clause filter
+        // This allows finding inactive users to reactivate them
+        val query = entityManager.createNativeQuery(
+            "SELECT * FROM app_users WHERE id = :id",
+            AppUser::class.java
+        )
+        query.setParameter("id", userId)
+        
+        @Suppress("UNCHECKED_CAST")
+        val results = query.resultList as List<AppUser>
+        val user = results.firstOrNull()
+            ?: throw IllegalArgumentException("User not found")
         
         val before = user.copy()
         val updated = user.copy(status = status)
