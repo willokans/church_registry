@@ -42,7 +42,7 @@ class SacramentService(
         type: SacramentType,
         personId: UUID,
         date: LocalDate,
-        ministerId: Long?,
+        ministerId: Long,
         bookNo: Int,
         pageNo: Int,
         entryNo: Int,

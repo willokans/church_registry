@@ -31,8 +31,8 @@ data class SacramentEvent(
     @Column(nullable = false)
     val date: LocalDate,
     
-    @Column(name = "minister_id")
-    val ministerId: Long? = null,
+    @Column(name = "minister_id", nullable = false)
+    val ministerId: Long,
     
     @Column(name = "book_no", nullable = false)
     val bookNo: Int,

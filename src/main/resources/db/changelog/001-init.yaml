@@ -265,6 +265,8 @@ databaseChangeLog:
               - column:
                   name: minister_id
                   type: UUID
+                  constraints:
+                    nullable: false
               - column:
                   name: book_no
                   type: INTEGER

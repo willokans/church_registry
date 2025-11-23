@@ -10,7 +10,7 @@ data class SacramentEventDto(
     val type: String,
     val personId: UUID,
     val date: LocalDate,
-    val ministerId: Long?,
+    val ministerId: Long,
     val bookNo: Int,
     val pageNo: Int,
     val entryNo: Int,
@@ -23,7 +23,7 @@ data class CreateSacramentEventRequest(
     val type: String,
     val personId: UUID,
     val date: LocalDate,
-    val ministerId: Long?,
+    val ministerId: Long,
     val bookNo: Int,
     val pageNo: Int,
     val entryNo: Int
@@ -32,7 +32,7 @@ data class CreateSacramentEventRequest(
 data class UpdateSacramentEventRequest(
     val personId: UUID?,
     val date: LocalDate?,
-    val ministerId: Long?,
+    val ministerId: Long,
     val bookNo: Int?,
     val pageNo: Int?,
     val entryNo: Int?

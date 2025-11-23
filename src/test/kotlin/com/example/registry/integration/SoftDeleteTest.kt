@@ -59,7 +59,7 @@ class SoftDeleteTest : BaseIntegrationTest() {
     fun `should soft delete sacrament event`() {
         val event = sacramentService.create(
             tenantId, SacramentType.BAPTISM, UUID.randomUUID(),
-            LocalDate.now(), null, 1, 1, 1, userId
+            LocalDate.now(), userId, 1, 1, 1, userId
         )
         
         // Verify event is active
@@ -134,14 +134,14 @@ class SoftDeleteTest : BaseIntegrationTest() {
         
         val event1 = sacramentService.create(
             tenantId, SacramentType.BAPTISM, personId,
-            LocalDate.now(), null, 1, 1, 1, userId
+            LocalDate.now(), userId, 1, 1, 1, userId
         )
         
         // Should fail - duplicate active entry
         org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
             sacramentService.create(
                 tenantId, SacramentType.BAPTISM, personId,
-                LocalDate.now(), null, 1, 1, 1, userId
+                LocalDate.now(), userId, 1, 1, 1, userId
             )
         }
         
@@ -151,7 +151,7 @@ class SoftDeleteTest : BaseIntegrationTest() {
         // Now should succeed - previous entry is inactive
         val event2 = sacramentService.create(
             tenantId, SacramentType.BAPTISM, personId,
-            LocalDate.now(), null, 1, 1, 1, userId
+            LocalDate.now(), userId, 1, 1, 1, userId
         )
         
         assertThat(event2.id).isNotEqualTo(event1.id)
