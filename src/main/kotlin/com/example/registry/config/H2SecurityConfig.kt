@@ -28,7 +28,6 @@ class H2SecurityConfig {
                 // Extract email from token if present (format: "email@example.com" or "user-email@example.com")
                 val emailPattern = Regex("""([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})""")
                 val emailMatch = emailPattern.find(token)
-                val email = emailMatch?.value ?: "dev@example.com"
                 
                 // Extract role from token if present
                 val role = when {
@@ -40,6 +39,16 @@ class H2SecurityConfig {
                     token.contains("viewer", ignoreCase = true) -> "VIEWER"
                     token.contains("admin", ignoreCase = true) -> "PARISH_ADMIN"
                     else -> "SUPER_ADMIN" // Default to SUPER_ADMIN for H2 dev
+                }
+                
+                // Map token to actual dummy user email if no email pattern found
+                val email = emailMatch?.value ?: when {
+                    role == "SUPER_ADMIN" -> "super-admin@test.com"
+                    role == "PARISH_ADMIN" -> "parish-admin@test.com"
+                    role == "REGISTRAR" -> "registrar@test.com"
+                    role == "PRIEST" -> "priest@test.com"
+                    role == "VIEWER" -> "viewer@test.com"
+                    else -> "super-admin@test.com" // Default to super-admin
                 }
                 
                 // Always return a valid JWT, regardless of input token format

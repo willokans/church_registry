@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 
 @Configuration
 @EnableMethodSecurity
@@ -29,12 +31,24 @@ class MethodSecurityConfig(
                     targetDomainObject: Any?,
                     permission: Any
                 ): Boolean {
+                    val perm = permission.toString()
+                    
+                    // For tenant management permissions, check if user has permission in ANY tenant
+                    // if tenant context is not available
+                    if ((perm == "tenants.manage" || perm == "tenants.view") && targetDomainObject == null) {
+                        val tenantIdFromContext = TenantContext.get()
+                        if (tenantIdFromContext != null) {
+                            return authorizationService.can(tenantIdFromContext, perm, authentication)
+                        }
+                        // If no tenant context, check if user has permission in any of their tenants
+                        return authorizationService.hasPermissionInAnyTenant(perm, authentication)
+                    }
+                    
                     val tenantId = when (targetDomainObject) {
                         is Long -> targetDomainObject
                         is String -> try { targetDomainObject.toLong() } catch (e: Exception) { return false }
                         else -> TenantContext.get() ?: return false
                     }
-                    val perm = permission.toString()
                     return authorizationService.can(tenantId, perm, authentication)
                 }
                 

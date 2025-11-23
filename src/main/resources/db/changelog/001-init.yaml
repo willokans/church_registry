@@ -456,7 +456,9 @@ databaseChangeLog:
                 ('sacraments.update'),
                 ('sacraments.view'),
                 ('settings.edit'),
-                ('audit.view')
+                ('audit.view'),
+                ('tenants.manage'),
+                ('tenants.view')
               ON CONFLICT (key) DO NOTHING;
 
   - changeSet:
@@ -487,6 +489,8 @@ databaseChangeLog:
                 ('SUPER_ADMIN', 'sacraments.view'),
                 ('SUPER_ADMIN', 'settings.edit'),
                 ('SUPER_ADMIN', 'audit.view'),
+                ('SUPER_ADMIN', 'tenants.manage'),
+                ('SUPER_ADMIN', 'tenants.view'),
                 ('PARISH_ADMIN', 'users.manage'),
                 ('PARISH_ADMIN', 'users.view'),
                 ('PARISH_ADMIN', 'permissions.grant'),
@@ -495,6 +499,8 @@ databaseChangeLog:
                 ('PARISH_ADMIN', 'sacraments.view'),
                 ('PARISH_ADMIN', 'settings.edit'),
                 ('PARISH_ADMIN', 'audit.view'),
+                ('PARISH_ADMIN', 'tenants.manage'),
+                ('PARISH_ADMIN', 'tenants.view'),
                 ('REGISTRAR', 'sacraments.create'),
                 ('REGISTRAR', 'sacraments.update'),
                 ('REGISTRAR', 'sacraments.view'),

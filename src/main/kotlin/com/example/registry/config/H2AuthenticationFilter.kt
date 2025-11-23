@@ -37,15 +37,22 @@ class H2AuthenticationFilter : OncePerRequestFilter() {
             val token = authHeader.substring(7) // Remove "Bearer " prefix
             logger.info("H2AuthenticationFilter: Token = $token")
             
-            // Only process if token looks like an email (contains @)
-            // Otherwise, let OAuth2ResourceServer handle it
-            if (token.contains("@")) {
-                logger.info("H2AuthenticationFilter: Token contains @, processing...")
+            // Process if token looks like an email (contains @) OR matches known token patterns
+            // Known patterns: super-admin-token, parish-admin-token, etc.
+            val isEmailToken = token.contains("@")
+            val isKnownToken = token.contains("super-admin", ignoreCase = true) ||
+                              token.contains("parish-admin", ignoreCase = true) ||
+                              token.contains("registrar", ignoreCase = true) ||
+                              token.contains("priest", ignoreCase = true) ||
+                              token.contains("viewer", ignoreCase = true) ||
+                              token.contains("admin", ignoreCase = true)
+            
+            if (isEmailToken || isKnownToken) {
+                logger.info("H2AuthenticationFilter: Processing token (isEmail=$isEmailToken, isKnown=$isKnownToken)...")
                 try {
                     // Extract email from token
                     val emailPattern = Regex("""([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})""")
                     val emailMatch = emailPattern.find(token)
-                    val email = emailMatch?.value ?: "dev@example.com"
                     
                     // Extract role from token
                     val role = when {
@@ -57,6 +64,16 @@ class H2AuthenticationFilter : OncePerRequestFilter() {
                         token.contains("viewer", ignoreCase = true) -> "VIEWER"
                         token.contains("admin", ignoreCase = true) -> "PARISH_ADMIN"
                         else -> "SUPER_ADMIN"
+                    }
+                    
+                    // Map token to actual dummy user email if no email pattern found
+                    val email = emailMatch?.value ?: when {
+                        role == "SUPER_ADMIN" -> "super-admin@test.com"
+                        role == "PARISH_ADMIN" -> "parish-admin@test.com"
+                        role == "REGISTRAR" -> "registrar@test.com"
+                        role == "PRIEST" -> "priest@test.com"
+                        role == "VIEWER" -> "viewer@test.com"
+                        else -> "super-admin@test.com" // Default to super-admin
                     }
                     
                     // Create a mock JWT

@@ -840,6 +840,18 @@ class H2DataInitializer(
                 description = "View audit logs",
                 category = com.example.registry.domain.PermissionCategory.AUDIT,
                 parentKey = null
+            ),
+            Permission(
+                key = "tenants.manage",
+                description = "Create, update, and delete tenants",
+                category = com.example.registry.domain.PermissionCategory.SETTINGS,
+                parentKey = null
+            ),
+            Permission(
+                key = "tenants.view",
+                description = "View tenant information",
+                category = com.example.registry.domain.PermissionCategory.SETTINGS,
+                parentKey = null
             )
         )
         permissionRepository.saveAll(permissions)
@@ -852,9 +864,10 @@ class H2DataInitializer(
         
         val rolePermissions = mutableListOf<RolePermission>()
         
-        // SUPER_ADMIN and PARISH_ADMIN get all permissions
+        // SUPER_ADMIN and PARISH_ADMIN get all permissions (including tenant permissions)
+        val allPermissionsWithTenants = allPermissions + setOf("tenants.manage", "tenants.view")
         listOf(Role.SUPER_ADMIN, Role.PARISH_ADMIN).forEach { role ->
-            allPermissions.forEach { perm ->
+            allPermissionsWithTenants.forEach { perm ->
                 rolePermissions.add(RolePermission(role = role, permissionKey = perm))
             }
         }

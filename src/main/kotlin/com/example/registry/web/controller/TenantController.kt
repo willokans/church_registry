@@ -2,6 +2,7 @@ package com.example.registry.web.controller
 
 import com.example.registry.repo.AppUserRepository
 import com.example.registry.service.TenantService
+import com.example.registry.tenancy.TenantContext
 import com.example.registry.web.dto.*
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -19,7 +20,7 @@ open class TenantController(
 ) {
     
     @GetMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasPermission(@tenantContext.get(), 'tenants.view')")
     open fun getAllTenants(): ResponseEntity<List<TenantDto>> {
         val tenants = tenantService.findAll()
         
@@ -38,7 +39,7 @@ open class TenantController(
     }
     
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasPermission(@tenantContext.get(), 'tenants.view')")
     open fun getTenantById(@PathVariable id: Long): ResponseEntity<TenantDto> {
         val tenant = tenantService.findById(id)
             ?: throw NoSuchElementException("Tenant not found")
@@ -73,6 +74,7 @@ open class TenantController(
     }
     
     @PostMapping
+    @PreAuthorize("hasPermission(@tenantContext.get(), 'tenants.manage')")
     open fun createTenant(
         @Valid @RequestBody request: CreateTenantRequest,
         authentication: Authentication?
@@ -107,7 +109,7 @@ open class TenantController(
     }
     
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasPermission(@tenantContext.get(), 'tenants.manage')")
     open fun updateTenant(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateTenantRequest,

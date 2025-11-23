@@ -90,6 +90,43 @@ class AuthorizationService(
     }
     
     /**
+     * Check if user has a permission in ANY of their tenants.
+     * Used for cross-tenant operations like tenant management.
+     */
+    fun hasPermissionInAnyTenant(permission: String, authentication: Authentication?): Boolean {
+        if (authentication == null || !authentication.isAuthenticated) {
+            return false
+        }
+        
+        val jwt = (authentication as? JwtAuthenticationToken)?.token as? Jwt
+            ?: return false
+        
+        val subject = jwt.subject ?: return false
+        val userId = extractUserIdFromJwt(jwt, subject) ?: return false
+        
+        // Get all active memberships for the user
+        val memberships = getMembershipsForUser(userId)
+        
+        // Check if user has the permission in any tenant
+        return memberships.any { membership ->
+            // SUPER_ADMIN has all permissions
+            if (membership.role == Role.SUPER_ADMIN) {
+                return true
+            }
+            
+            // Check tenant-specific permissions first
+            val tenantPermission = getTenantRolePermission(membership.tenantId, membership.role, permission)
+            if (tenantPermission != null) {
+                return tenantPermission.granted
+            }
+            
+            // Fall back to global role permissions
+            val permissions = getPermissionsForRole(membership.role)
+            permissions.contains(permission)
+        }
+    }
+    
+    /**
      * Get permission groups for UI organization.
      * Groups permissions by their category for better display in admin interfaces.
      */

@@ -63,7 +63,9 @@ class RBACTest : BaseIntegrationTest() {
             "sacraments.update",
             "sacraments.view",
             "settings.edit",
-            "audit.view"
+            "audit.view",
+            "tenants.manage",
+            "tenants.view"
         )
         permissions.forEach { key ->
             if (!permissionRepository.existsById(key)) {
