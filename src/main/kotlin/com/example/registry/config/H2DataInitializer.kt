@@ -345,7 +345,7 @@ class H2DataInitializer(
                     
                     // 2. Permission (no dependencies)
                     try {
-                        val dummy = Permission(key = "__dummy__")
+                        val dummy = Permission(key = "__dummy__", description = null, category = null)
                         entityManager.persist(dummy)
                         entityManager.flush()
                         entityManager.remove(dummy)
@@ -775,17 +775,49 @@ class H2DataInitializer(
         )
         val savedTenant1 = tenantRepository.save(tenant)
 
-        // Create permissions
+        // Create permissions with metadata
         val permissions = listOf(
-            "users.manage",
-            "users.view",
-            "permissions.grant",
-            "sacraments.create",
-            "sacraments.update",
-            "sacraments.view",
-            "settings.edit",
-            "audit.view"
-        ).map { Permission(key = it) }
+            Permission(
+                key = "users.manage",
+                description = "Create, update, and delete users within a tenant",
+                category = "users"
+            ),
+            Permission(
+                key = "users.view",
+                description = "View user information within a tenant",
+                category = "users"
+            ),
+            Permission(
+                key = "permissions.grant",
+                description = "Grant roles and permissions to users",
+                category = "users"
+            ),
+            Permission(
+                key = "sacraments.create",
+                description = "Create new sacramental events",
+                category = "sacraments"
+            ),
+            Permission(
+                key = "sacraments.update",
+                description = "Update existing sacramental events",
+                category = "sacraments"
+            ),
+            Permission(
+                key = "sacraments.view",
+                description = "View sacramental events",
+                category = "sacraments"
+            ),
+            Permission(
+                key = "settings.edit",
+                description = "Edit tenant settings and content",
+                category = "settings"
+            ),
+            Permission(
+                key = "audit.view",
+                description = "View audit logs",
+                category = "audit"
+            )
+        )
         permissionRepository.saveAll(permissions)
         
         // Create role permissions

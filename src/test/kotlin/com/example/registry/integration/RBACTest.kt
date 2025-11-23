@@ -67,7 +67,11 @@ class RBACTest : BaseIntegrationTest() {
         )
         permissions.forEach { key ->
             if (!permissionRepository.existsById(key)) {
-                permissionRepository.save(com.example.registry.domain.entity.Permission(key = key))
+                permissionRepository.save(com.example.registry.domain.entity.Permission(
+                    key = key,
+                    description = null,
+                    category = null
+                ))
             }
         }
         

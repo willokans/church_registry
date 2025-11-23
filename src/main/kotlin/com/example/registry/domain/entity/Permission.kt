@@ -7,6 +7,12 @@ import jakarta.persistence.*
 data class Permission(
     @Id
     @Column(name = "key", length = 100)
-    val key: String
+    val key: String,
+    
+    @Column(name = "description", length = 500)
+    val description: String? = null,
+    
+    @Column(name = "category", length = 50) // e.g., "users", "sacraments", "settings"
+    val category: String? = null
 )
 

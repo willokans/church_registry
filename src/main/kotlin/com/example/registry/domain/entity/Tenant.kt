@@ -29,9 +29,6 @@ data class Tenant(
     val theme: Map<String, Any>? = null,
     
     @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.SECONDS),
-
-    @OneToMany(mappedBy = "tenant", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val memberships: List<Membership> = emptyList()
+    val createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.SECONDS)
 )
 
