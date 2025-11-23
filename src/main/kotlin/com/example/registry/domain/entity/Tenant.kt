@@ -28,7 +28,13 @@ data class Tenant(
     @Column
     val theme: Map<String, Any>? = null,
     
-    @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.SECONDS)
-)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
+    var createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+) {
+    @PrePersist
+    fun prePersist() {
+        createdAt = createdAt.truncatedTo(ChronoUnit.SECONDS)
+ 
+    }
+}
 

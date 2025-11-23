@@ -31,7 +31,12 @@ data class AppUser(
     @Column(nullable = false, length = 20)
     val status: Status = Status.ACTIVE,
     
-    @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.SECONDS)
-)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(0)")
+    var createdAt: Instant = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+) {
+    @PrePersist
+    fun prePersist() {
+        createdAt = createdAt.truncatedTo(ChronoUnit.SECONDS)
+    }
+}
 
