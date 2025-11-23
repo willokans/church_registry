@@ -796,49 +796,49 @@ class H2DataInitializer(
             Permission(
                 key = "users.manage",
                 description = "Create, update, and delete users within a tenant",
-                category = "users",
+                category = com.example.registry.domain.PermissionCategory.USERS,
                 parentKey = null
             ),
             Permission(
                 key = "users.view",
                 description = "View user information within a tenant",
-                category = "users",
+                category = com.example.registry.domain.PermissionCategory.USERS,
                 parentKey = null
             ),
             Permission(
                 key = "permissions.grant",
                 description = "Grant roles and permissions to users",
-                category = "users",
+                category = com.example.registry.domain.PermissionCategory.USERS,
                 parentKey = null
             ),
             Permission(
                 key = "sacraments.create",
                 description = "Create new sacramental events",
-                category = "sacraments",
+                category = com.example.registry.domain.PermissionCategory.SACRAMENTS,
                 parentKey = null
             ),
             Permission(
                 key = "sacraments.update",
                 description = "Update existing sacramental events",
-                category = "sacraments",
+                category = com.example.registry.domain.PermissionCategory.SACRAMENTS,
                 parentKey = null
             ),
             Permission(
                 key = "sacraments.view",
                 description = "View sacramental events",
-                category = "sacraments",
+                category = com.example.registry.domain.PermissionCategory.SACRAMENTS,
                 parentKey = null
             ),
             Permission(
                 key = "settings.edit",
                 description = "Edit tenant settings and content",
-                category = "settings",
+                category = com.example.registry.domain.PermissionCategory.SETTINGS,
                 parentKey = null
             ),
             Permission(
                 key = "audit.view",
                 description = "View audit logs",
-                category = "audit",
+                category = com.example.registry.domain.PermissionCategory.AUDIT,
                 parentKey = null
             )
         )

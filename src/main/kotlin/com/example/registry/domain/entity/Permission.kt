@@ -1,5 +1,6 @@
 package com.example.registry.domain.entity
 
+import com.example.registry.domain.PermissionCategory
 import jakarta.persistence.*
 
 @Entity
@@ -12,8 +13,9 @@ data class Permission(
     @Column(name = "description", length = 500)
     val description: String? = null,
     
-    @Column(name = "category", length = 50) // e.g., "users", "sacraments", "settings"
-    val category: String? = null,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", length = 50)
+    val category: PermissionCategory? = null,
     
     @Column(name = "parent_key", length = 100)
     val parentKey: String? = null // For hierarchical permissions, e.g., "sacraments.*" → "sacraments.create", "sacraments.update"
