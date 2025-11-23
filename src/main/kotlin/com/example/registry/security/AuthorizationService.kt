@@ -5,6 +5,7 @@ import com.example.registry.domain.Status
 import com.example.registry.repo.MembershipRepository
 import com.example.registry.repo.RolePermissionRepository
 import com.example.registry.repo.TenantRolePermissionRepository
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.jwt.Jwt
@@ -83,6 +84,60 @@ class AuthorizationService(
         return membershipRepository.findAllByUserId(userId)
             .filter { it.status == Status.ACTIVE && !it.isExpired() }
             .map { MembershipInfo(it.tenantId, it.role) }
+    }
+    
+    /**
+     * Evict cache for role permissions when role permissions are updated.
+     * Call this method after creating, updating, or deleting RolePermission entities.
+     */
+    @CacheEvict(value = ["role-permissions"], key = "#role")
+    fun evictRolePermissionsCache(role: Role) {
+        // Method body is empty - annotation handles cache eviction
+    }
+    
+    /**
+     * Evict all role permissions cache entries.
+     * Use this when permissions for multiple roles are updated.
+     */
+    @CacheEvict(value = ["role-permissions"], allEntries = true)
+    fun evictAllRolePermissionsCache() {
+        // Method body is empty - annotation handles cache eviction
+    }
+    
+    /**
+     * Evict cache for tenant role permissions when tenant-specific permissions are updated.
+     * Call this method after creating, updating, or deleting TenantRolePermission entities.
+     */
+    @CacheEvict(value = ["tenant-role-permissions"], key = "#tenantId + '_' + #role + '_' + #permissionKey")
+    fun evictTenantRolePermissionCache(tenantId: Long, role: Role, permissionKey: String) {
+        // Method body is empty - annotation handles cache eviction
+    }
+    
+    /**
+     * Evict all tenant role permissions cache entries for a specific tenant and role.
+     * Use this when multiple permissions for a tenant/role combination are updated.
+     */
+    @CacheEvict(value = ["tenant-role-permissions"], allEntries = true)
+    fun evictAllTenantRolePermissionsCache() {
+        // Method body is empty - annotation handles cache eviction
+    }
+    
+    /**
+     * Evict membership cache when membership is updated.
+     * Call this method after creating, updating, or deleting Membership entities.
+     */
+    @CacheEvict(value = ["memberships"], key = "#userId + '_' + #tenantId + '_' + (#tokenId ?: 'none')")
+    fun evictMembershipCache(userId: Long, tenantId: Long, tokenId: String?) {
+        // Method body is empty - annotation handles cache eviction
+    }
+    
+    /**
+     * Evict all membership cache entries.
+     * Use this when multiple memberships are updated.
+     */
+    @CacheEvict(value = ["memberships"], allEntries = true)
+    fun evictAllMembershipsCache() {
+        // Method body is empty - annotation handles cache eviction
     }
     
     data class MembershipInfo(

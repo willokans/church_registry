@@ -6,6 +6,7 @@ import com.example.registry.domain.entity.AppUser
 import com.example.registry.domain.entity.Membership
 import com.example.registry.repo.AppUserRepository
 import com.example.registry.repo.MembershipRepository
+import com.example.registry.security.AuthorizationService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -14,7 +15,8 @@ import java.util.*
 class UserService(
     private val appUserRepository: AppUserRepository,
     private val membershipRepository: MembershipRepository,
-    private val auditService: AuditService
+    private val auditService: AuditService,
+    private val authorizationService: AuthorizationService
 ) {
     
     fun findById(id: Long): AppUser? = appUserRepository.findById(id).orElse(null)
@@ -59,6 +61,8 @@ class UserService(
             )
             val saved = membershipRepository.save(updated)
             auditService.log(tenantId, grantedBy, "UPDATE", "Membership", null, existing, saved)
+            // Evict membership cache
+            authorizationService.evictAllMembershipsCache()
             return saved
         }
         
@@ -70,6 +74,8 @@ class UserService(
         )
         val saved = membershipRepository.save(membership)
         auditService.log(tenantId, grantedBy, "CREATE", "Membership", null, null, saved)
+        // Evict membership cache
+        authorizationService.evictAllMembershipsCache()
         return saved
     }
     
