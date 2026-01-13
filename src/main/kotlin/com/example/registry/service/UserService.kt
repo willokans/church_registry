@@ -92,7 +92,7 @@ class UserService(
         // Use native query to bypass @Where clause filter
         // This allows finding inactive users to reactivate them
         val query = entityManager.createNativeQuery(
-            "SELECT * FROM app_users WHERE id = :id",
+            "SELECT * FROM \"app_users\" WHERE \"id\" = :id",
             AppUser::class.java
         )
         query.setParameter("id", userId)

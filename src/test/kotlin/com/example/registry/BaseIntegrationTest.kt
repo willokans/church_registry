@@ -44,16 +44,20 @@ abstract class BaseIntegrationTest {
         }
         
         private fun configureH2(registry: DynamicPropertyRegistry) {
+            // Use a custom H2 URL that supports PostgreSQL compatibility mode
+            // This helps with TIMESTAMP(0) -> TIMESTAMP conversion
             registry.add("spring.datasource.url") { "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE" }
             registry.add("spring.datasource.username") { "sa" }
             registry.add("spring.datasource.password") { "" }
             registry.add("spring.datasource.driver-class-name") { "org.h2.Driver" }
-            registry.add("spring.jpa.database-platform") { "org.hibernate.dialect.H2Dialect" }
-            registry.add("spring.jpa.properties.hibernate.dialect") { "org.hibernate.dialect.H2Dialect" }
+            registry.add("spring.jpa.database-platform") { "com.example.registry.config.TestH2Dialect" }
+            registry.add("spring.jpa.properties.hibernate.dialect") { "com.example.registry.config.TestH2Dialect" }
             registry.add("spring.jpa.properties.hibernate.globally_quoted_identifiers") { "true" }
             registry.add("spring.jpa.properties.hibernate.jdbc.use_get_generated_keys") { "true" }
-            registry.add("spring.jpa.hibernate.ddl-auto") { "create-drop" }
+            // Disable Hibernate DDL - we'll create tables manually via H2SchemaCreator
+            registry.add("spring.jpa.hibernate.ddl-auto") { "none" }
             registry.add("spring.liquibase.enabled") { "false" }
         }
     }
+    
 }

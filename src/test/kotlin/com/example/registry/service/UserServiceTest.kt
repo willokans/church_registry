@@ -190,7 +190,7 @@ class UserServiceTest {
         // Then
         val queryCaptor = ArgumentCaptor.forClass(String::class.java)
         verify(entityManager).createNativeQuery(queryCaptor.capture(), anyArg(Class::class.java))
-        assertThat(queryCaptor.value).contains("SELECT * FROM app_users WHERE id = :id")
+        assertThat(queryCaptor.value).contains("SELECT * FROM \"app_users\" WHERE \"id\" = :id")
 
         val paramNameCaptor = ArgumentCaptor.forClass(String::class.java)
         val paramValueCaptor = ArgumentCaptor.forClass(Any::class.java)

@@ -21,11 +21,15 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.util.*
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 class UserControllerIntegrationTest : BaseIntegrationTest() {
+    
+    @Autowired
+    private lateinit var transactionTemplate: TransactionTemplate
 
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -69,8 +73,26 @@ class UserControllerIntegrationTest : BaseIntegrationTest() {
     @BeforeEach
     @Transactional
     fun setup() {
+        // Force Hibernate to create schema by trying to persist a dummy entity in a new transaction
+        // Hibernate's ddl-auto: create-drop creates tables lazily, so we trigger creation here
+        transactionTemplate.execute {
+            try {
+                val dummyTenant = com.example.registry.domain.entity.Tenant(
+                    slug = "__schema_init__",
+                    name = "__schema_init__"
+                )
+                entityManager.persist(dummyTenant)
+                entityManager.flush()
+                entityManager.remove(dummyTenant)
+                entityManager.flush()
+            } catch (e: Exception) {
+                // Schema might already be created, continue
+            }
+            null
+        }
+        
         // Create tenant - Hibernate creates tables lazily with ddl-auto: create-drop
-        // Just save directly, Hibernate will create tables on first entity save
+        // The transaction above should have triggered schema creation
         val tenant = tenantRepository.save(
             com.example.registry.domain.entity.Tenant(
                 slug = "test-tenant-${UUID.randomUUID()}",
