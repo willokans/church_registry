@@ -10,7 +10,7 @@ import com.example.registry.tenancy.TenantContext
 import com.example.registry.util.CursorPage
 import com.example.registry.util.ETagUtil
 import com.example.registry.web.dto.*
-import com.example.registry.web.dto.SacramentEventMapper.toDto
+import com.example.registry.web.dto.SacramentEventMapper
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.data.domain.Page
@@ -31,7 +31,8 @@ class SacramentController(
     private val sacramentService: SacramentService,
     private val idempotencyService: IdempotencyService,
     private val appUserRepository: AppUserRepository,
-    private val personService: PersonService
+    private val personService: PersonService,
+    private val sacramentEventMapper: SacramentEventMapper
 ) {
     
     @GetMapping("/types")
@@ -51,7 +52,8 @@ class SacramentController(
         request: HttpServletRequest
     ): ResponseEntity<CursorPage<SacramentEventDto>> {
         val tenantId = TenantContext.require()
-        val sacramentType = type?.let { SacramentType.valueOf(it) }
+        // Parse type if provided, otherwise null returns all types
+        val sacramentType = type?.let { parseSacramentType(it) }
         val sacramentStatus = parseStatus(status)
         val cursorLong = parseCursor(cursor)
         
@@ -165,7 +167,7 @@ class SacramentController(
         
         idempotencyService.recordResponse(tenantId, idempotencyKey, HttpStatus.CREATED.value())
         
-        return ResponseEntity.status(HttpStatus.CREATED).body(toDto(event))
+        return ResponseEntity.status(HttpStatus.CREATED).body(sacramentEventMapper.toDto(event))
     }
     
     @PutMapping("/{id}")
@@ -183,7 +185,7 @@ class SacramentController(
             request.priestName, request.bookNo, request.pageNo, request.entryNo, updatedBy
         )
         
-        return ResponseEntity.ok(toDto(event))
+        return ResponseEntity.ok(sacramentEventMapper.toDto(event))
     }
     
     @PostMapping("/{id}/status")
@@ -231,7 +233,7 @@ class SacramentController(
         page: Page<com.example.registry.domain.entity.SacramentEvent>,
         request: HttpServletRequest
     ): ResponseEntity<CursorPage<SacramentEventDto>> {
-        val dtos = page.content.map { toDto(it) }
+        val dtos = page.content.map { sacramentEventMapper.toDto(it) }
         val nextCursor = if (page.hasNext()) {
             page.content.lastOrNull()?.id?.toString()
         } else null

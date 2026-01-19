@@ -9,5 +9,6 @@ import java.util.*
 interface PersonRepository : JpaRepository<Person, Long> {
     fun findByTenantId(tenantId: Long): List<Person>
     fun findByIdAndTenantId(id: Long, tenantId: Long): Optional<Person>
+    fun findByUuid(uuid: UUID): Person?
 }
 

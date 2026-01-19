@@ -19,7 +19,11 @@ data class SacramentEventDto(
     val entryNo: Int,
     val status: String,
     val createdAt: Instant,
-    val updatedAt: Instant?
+    val updatedAt: Instant?,
+    // Additional fields for BAPTISM records
+    val baptismName: String? = null,
+    val firstName: String? = null,
+    val lastName: String? = null
 )
 
 data class CreateSacramentEventRequest(
