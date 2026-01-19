@@ -34,6 +34,25 @@ class SacramentService(
         )
     }
     
+    /**
+     * Find all sacraments of a specific type.
+     * This is a convenience method that ensures type is always provided.
+     */
+    fun findAllByType(
+        tenantId: Long,
+        type: SacramentType,
+        status: Status?,
+        fromDate: LocalDate?,
+        toDate: LocalDate?,
+        cursor: Long?,
+        limit: Int = 20
+    ): Page<SacramentEvent> {
+        val pageable = PageRequest.of(0, limit, Sort.by("id").ascending())
+        return sacramentEventRepository.findAllByFilters(
+            tenantId, type, status, fromDate, toDate, cursor, pageable
+        )
+    }
+    
     fun findById(id: Long): SacramentEvent? = sacramentEventRepository.findById(id).orElse(null)
     
     @Transactional

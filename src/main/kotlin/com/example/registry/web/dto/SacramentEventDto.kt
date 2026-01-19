@@ -42,4 +42,3 @@ data class UpdateSacramentEventStatusRequest(
     val status: String,
     val reason: String?
 )
-
