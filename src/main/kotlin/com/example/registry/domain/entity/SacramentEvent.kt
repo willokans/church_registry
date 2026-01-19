@@ -3,7 +3,9 @@ package com.example.registry.domain.entity
 import com.example.registry.domain.SacramentType
 import com.example.registry.domain.Status
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.Where
+import org.hibernate.type.SqlTypes
 import java.time.Instant
 import java.time.LocalDate
 import java.util.*
@@ -31,8 +33,8 @@ data class SacramentEvent(
     @Column(nullable = false)
     val date: LocalDate,
     
-    @Column(name = "minister_id", nullable = false)
-    val ministerId: Long,
+    @Column(name = "priest_name", nullable = false, length = 200)
+    val priestName: String,
     
     @Column(name = "book_no", nullable = false)
     val bookNo: Int,
@@ -66,6 +68,11 @@ data class SacramentEvent(
     val deactivatedBy: Long? = null,
     
     @Column(name = "deactivation_reason", length = 500)
-    val deactivationReason: String? = null
+    val deactivationReason: String? = null,
+    
+    // Additional fields for sacrament-specific data (stored as JSON)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "metadata")
+    val metadata: Map<String, Any>? = null // For storing baptism name, sponsor names, notes, etc.
 )
 

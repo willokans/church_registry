@@ -15,7 +15,7 @@ object SacramentEventMapper {
             type = event.type.name,
             personId = event.personId,
             date = event.date,
-            ministerId = event.ministerId,
+            priestName = event.priestName,
             bookNo = event.bookNo,
             pageNo = event.pageNo,
             entryNo = event.entryNo,

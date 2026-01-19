@@ -4,6 +4,7 @@ import com.example.registry.domain.SacramentType
 import com.example.registry.domain.Status
 import com.example.registry.repo.AppUserRepository
 import com.example.registry.service.IdempotencyService
+import com.example.registry.service.PersonService
 import com.example.registry.service.SacramentService
 import com.example.registry.tenancy.TenantContext
 import com.example.registry.util.CursorPage
@@ -29,8 +30,15 @@ import java.util.*
 class SacramentController(
     private val sacramentService: SacramentService,
     private val idempotencyService: IdempotencyService,
-    private val appUserRepository: AppUserRepository
+    private val appUserRepository: AppUserRepository,
+    private val personService: PersonService
 ) {
+    
+    @GetMapping("/types")
+    fun getSacramentTypes(): ResponseEntity<Map<String, List<String>>> {
+        val types = SacramentType.values().map { it.name }
+        return ResponseEntity.ok(mapOf("types" to types))
+    }
     
     @GetMapping
     fun getAllSacraments(
@@ -101,10 +109,58 @@ class SacramentController(
                 .build()
         }
         
-        val type = SacramentType.valueOf(request.type)
+        // Validation annotation ensures type is valid, but we handle it gracefully
+        val type = parseSacramentType(request.type)
+        
+        // Determine personId - create person if needed for BAPTISM
+        val personId = when {
+            request.personId != null -> {
+                // Use existing person
+                request.personId
+            }
+            type == SacramentType.BAPTISM -> {
+                // Create new person for BAPTISM
+                if (request.firstName == null || request.lastName == null) {
+                    throw IllegalArgumentException("firstName and lastName are required when creating BAPTISM without personId")
+                }
+                if (request.baptismName == null) {
+                    throw IllegalArgumentException("baptismName is required when creating BAPTISM")
+                }
+                
+                val person = personService.createPerson(
+                    tenantId = tenantId,
+                    firstName = request.firstName,
+                    lastName = request.lastName,
+                    middleName = request.middleName,
+                    dateOfBirth = request.dateOfBirth,
+                    gender = request.gender,
+                    baptismName = request.baptismName,
+                    fatherName = request.fatherName,
+                    motherName = request.motherName
+                )
+                person.uuid
+            }
+            else -> {
+                throw IllegalArgumentException("personId is required for sacrament type: ${type.name}")
+            }
+        }
+        
+        // Build metadata for BAPTISM-specific information
+        val metadata = if (type == SacramentType.BAPTISM) {
+            val meta = mutableMapOf<String, Any>()
+            request.baptismName?.let { meta["baptismName"] = it }
+            request.fatherName?.let { meta["fatherName"] = it }
+            request.motherName?.let { meta["motherName"] = it }
+            request.parentAddress?.let { meta["parentAddress"] = it }
+            request.sponsor1Name?.let { meta["sponsor1Name"] = it }
+            request.sponsor2Name?.let { meta["sponsor2Name"] = it }
+            request.notes?.let { meta["notes"] = it }
+            if (meta.isNotEmpty()) meta else null
+        } else null
+        
         val event = sacramentService.create(
-            tenantId, type, request.personId, request.date,
-            request.ministerId, request.bookNo, request.pageNo, request.entryNo, createdBy
+            tenantId, type, personId, request.date,
+            request.priestName, request.bookNo, request.pageNo, request.entryNo, createdBy, metadata
         )
         
         idempotencyService.recordResponse(tenantId, idempotencyKey, HttpStatus.CREATED.value())
@@ -124,7 +180,7 @@ class SacramentController(
         
         val event = sacramentService.update(
             id, tenantId, request.personId, request.date,
-            request.ministerId, request.bookNo, request.pageNo, request.entryNo, updatedBy
+            request.priestName, request.bookNo, request.pageNo, request.entryNo, updatedBy
         )
         
         return ResponseEntity.ok(toDto(event))

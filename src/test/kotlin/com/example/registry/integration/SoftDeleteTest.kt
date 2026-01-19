@@ -59,7 +59,7 @@ class SoftDeleteTest : BaseIntegrationTest() {
     fun `should soft delete sacrament event`() {
         val event = sacramentService.create(
             tenantId, SacramentType.BAPTISM, UUID.randomUUID(),
-            LocalDate.now(), userId, 1, 1, 1, userId
+            LocalDate.now(), "Rev. Test Priest", 1, 1, 1, userId
         )
         
         // Verify event is active
@@ -78,7 +78,7 @@ class SoftDeleteTest : BaseIntegrationTest() {
         // All column names must be quoted for H2 with globally_quoted_identifiers
         val query = entityManager.createNativeQuery(
             """
-            SELECT "id", "tenant_id", "type", "person_id", "date", "minister_id", "book_no", "page_no", "entry_no", 
+            SELECT "id", "tenant_id", "type", "person_id", "date", "priest_name", "book_no", "page_no", "entry_no", 
                    "status", "created_by", "created_at", "updated_by", "updated_at", 
                    "deactivated_at", "deactivated_by", "deactivation_reason"
             FROM "sacrament_events" 
@@ -91,7 +91,7 @@ class SoftDeleteTest : BaseIntegrationTest() {
         val result = results[0] as Array<Any>
         
         // Map result array to entity fields (H2 returns Object[] for native queries)
-        // Column order: id(0), tenant_id(1), type(2), person_id(3), date(4), minister_id(5), 
+        // Column order: id(0), tenant_id(1), type(2), person_id(3), date(4), priest_name(5), 
         // book_no(6), page_no(7), entry_no(8), status(9), created_by(10), created_at(11),
         // updated_by(12), updated_at(13), deactivated_at(14), deactivated_by(15), deactivation_reason(16)
         val inactiveEventId = (result[0] as Number).toLong()
@@ -134,14 +134,14 @@ class SoftDeleteTest : BaseIntegrationTest() {
         
         val event1 = sacramentService.create(
             tenantId, SacramentType.BAPTISM, personId,
-            LocalDate.now(), userId, 1, 1, 1, userId
+            LocalDate.now(), "Rev. Test Priest", 1, 1, 1, userId
         )
         
         // Should fail - duplicate active entry
         org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
             sacramentService.create(
                 tenantId, SacramentType.BAPTISM, personId,
-                LocalDate.now(), userId, 1, 1, 1, userId
+                LocalDate.now(), "Rev. Test Priest", 1, 1, 1, userId
             )
         }
         
@@ -151,7 +151,7 @@ class SoftDeleteTest : BaseIntegrationTest() {
         // Now should succeed - previous entry is inactive
         val event2 = sacramentService.create(
             tenantId, SacramentType.BAPTISM, personId,
-            LocalDate.now(), userId, 1, 1, 1, userId
+            LocalDate.now(), "Rev. Test Priest", 1, 1, 1, userId
         )
         
         assertThat(event2.id).isNotEqualTo(event1.id)

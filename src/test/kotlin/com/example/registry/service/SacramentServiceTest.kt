@@ -57,7 +57,7 @@ class SacramentServiceTest : BaseIntegrationTest() {
             type = SacramentType.BAPTISM,
             personId = personId,
             date = LocalDate.now(),
-            ministerId = userId,
+            priestName = "Rev. Test Priest",
             bookNo = 1,
             pageNo = 1,
             entryNo = 1,
@@ -76,13 +76,13 @@ class SacramentServiceTest : BaseIntegrationTest() {
         
         sacramentService.create(
             tenantId, SacramentType.BAPTISM, personId, LocalDate.now(),
-            userId, 1, 1, 1, userId
+            "Rev. Test Priest", 1, 1, 1, userId
         )
         
         org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
             sacramentService.create(
                 tenantId, SacramentType.BAPTISM, personId, LocalDate.now(),
-                userId, 1, 1, 1, userId
+                "Rev. Test Priest", 1, 1, 1, userId
             )
         }
     }

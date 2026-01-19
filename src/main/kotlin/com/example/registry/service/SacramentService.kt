@@ -2,8 +2,10 @@ package com.example.registry.service
 
 import com.example.registry.domain.SacramentType
 import com.example.registry.domain.Status
+import com.example.registry.domain.entity.Person
 import com.example.registry.domain.entity.SacramentEvent
 import com.example.registry.repo.SacramentEventRepository
+import com.example.registry.service.PersonService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -16,7 +18,8 @@ import java.util.*
 @Service
 class SacramentService(
     private val sacramentEventRepository: SacramentEventRepository,
-    private val auditService: AuditService
+    private val auditService: AuditService,
+    private val personService: PersonService
 ) {
     
     fun findAll(
@@ -61,11 +64,12 @@ class SacramentService(
         type: SacramentType,
         personId: UUID,
         date: LocalDate,
-        ministerId: Long,
+        priestName: String,
         bookNo: Int,
         pageNo: Int,
         entryNo: Int,
-        createdBy: Long
+        createdBy: Long,
+        metadata: Map<String, Any>? = null
     ): SacramentEvent {
         // Check for duplicate entry
         val existing = sacramentEventRepository.findByTenantIdAndTypeAndBookNoAndPageNoAndEntryNoAndStatus(
@@ -80,11 +84,12 @@ class SacramentService(
             type = type,
             personId = personId,
             date = date,
-            ministerId = ministerId,
+            priestName = priestName,
             bookNo = bookNo,
             pageNo = pageNo,
             entryNo = entryNo,
-            createdBy = createdBy
+            createdBy = createdBy,
+            metadata = metadata
         )
         
         val saved = sacramentEventRepository.save(event)
@@ -98,7 +103,7 @@ class SacramentService(
         tenantId: Long,
         personId: UUID?,
         date: LocalDate?,
-        ministerId: Long?,
+        priestName: String?,
         bookNo: Int?,
         pageNo: Int?,
         entryNo: Int?,
@@ -118,7 +123,7 @@ class SacramentService(
         val updated = existing.copy(
             personId = personId ?: existing.personId,
             date = date ?: existing.date,
-            ministerId = ministerId ?: existing.ministerId,
+            priestName = priestName ?: existing.priestName,
             bookNo = bookNo ?: existing.bookNo,
             pageNo = pageNo ?: existing.pageNo,
             entryNo = entryNo ?: existing.entryNo,
@@ -155,6 +160,82 @@ class SacramentService(
         
         val saved = sacramentEventRepository.save(updated)
         auditService.log(tenantId, updatedBy, "UPDATE_STATUS", "SacramentEvent", saved.id.toString(), existing, saved)
+    }
+    
+    /**
+     * Create a Baptism sacrament with person details.
+     * This creates both the person and the baptism record in one transaction.
+     */
+    @Transactional
+    fun createBaptismWithPerson(
+        tenantId: Long,
+        firstName: String,
+        lastName: String,
+        middleName: String?,
+        dateOfBirth: LocalDate?,
+        gender: String?,
+        baptismName: String,
+        fatherName: String?,
+        motherName: String?,
+        baptismDate: LocalDate,
+        priestName: String,
+        sponsor1Name: String?,
+        sponsor2Name: String?,
+        bookNo: Int,
+        pageNo: Int,
+        entryNo: Int,
+        notes: String?,
+        createdBy: Long
+    ): Pair<Person, SacramentEvent> {
+        // Create the person first
+        val person = personService.createPerson(
+            tenantId = tenantId,
+            firstName = firstName,
+            lastName = lastName,
+            middleName = middleName,
+            dateOfBirth = dateOfBirth,
+            gender = gender,
+            baptismName = baptismName,
+            fatherName = fatherName,
+            motherName = motherName
+        )
+        
+        // Build metadata for baptism-specific information
+        val metadata = mutableMapOf<String, Any>(
+            "baptismName" to baptismName
+        )
+        fatherName?.let { metadata["fatherName"] = it }
+        motherName?.let { metadata["motherName"] = it }
+        sponsor1Name?.let { metadata["sponsor1Name"] = it }
+        sponsor2Name?.let { metadata["sponsor2Name"] = it }
+        notes?.let { metadata["notes"] = it }
+        
+        // Check for duplicate entry
+        val existing = sacramentEventRepository.findByTenantIdAndTypeAndBookNoAndPageNoAndEntryNoAndStatus(
+            tenantId, SacramentType.BAPTISM, bookNo, pageNo, entryNo, Status.ACTIVE
+        )
+        if (existing != null) {
+            throw IllegalArgumentException("Duplicate entry: book $bookNo, page $pageNo, entry $entryNo")
+        }
+        
+        // Create the baptism event
+        val event = SacramentEvent(
+            tenantId = tenantId,
+            type = SacramentType.BAPTISM,
+            personId = person.uuid,
+            date = baptismDate,
+            priestName = priestName,
+            bookNo = bookNo,
+            pageNo = pageNo,
+            entryNo = entryNo,
+            createdBy = createdBy,
+            metadata = metadata
+        )
+        
+        val savedEvent = sacramentEventRepository.save(event)
+        auditService.log(tenantId, createdBy, "CREATE", "SacramentEvent", savedEvent.id.toString(), null, savedEvent)
+        
+        return Pair(person, savedEvent)
     }
 }
 

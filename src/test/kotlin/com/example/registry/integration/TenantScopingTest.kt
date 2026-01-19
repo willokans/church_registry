@@ -71,13 +71,13 @@ class TenantScopingTest : BaseIntegrationTest() {
         
         val event1 = sacramentService.create(
             tenant1, SacramentType.BAPTISM, UUID.randomUUID(),
-            LocalDate.now(), user1, 1, 1, 1, user1
+            LocalDate.now(), "Rev. Test Priest 1", 1, 1, 1, user1
         )
         
         TenantContext.set(tenant2)
         val event2 = sacramentService.create(
             tenant2, SacramentType.BAPTISM, UUID.randomUUID(),
-            LocalDate.now(), user2, 1, 1, 1, user2
+            LocalDate.now(), "Rev. Test Priest 2", 1, 1, 1, user2
         )
         
         TenantContext.set(tenant1)
