@@ -64,7 +64,13 @@ data class CreateSacramentEventRequest(
     val parentAddress: String? = null,
     val sponsor1Name: String? = null,
     val sponsor2Name: String? = null,
-    val notes: String? = null
+    val notes: String? = null,
+    
+    // Eucharist-specific fields - used when type is EUCHARIST
+    val dateOfHolyEucharist: LocalDate? = null,
+    val eucharistSponsor1Name: String? = null,
+    val eucharistSponsor2Name: String? = null,
+    val parish: String? = null
 )
 
 data class UpdateSacramentEventRequest(

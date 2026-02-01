@@ -44,5 +44,12 @@ interface SacramentEventRepository : JpaRepository<SacramentEvent, Long> {
         entryNo: Int,
         status: Status
     ): SacramentEvent?
+
+    fun existsByTenantIdAndTypeAndPersonIdAndStatus(
+        tenantId: Long,
+        type: SacramentType,
+        personId: UUID,
+        status: Status
+    ): Boolean
 }
 

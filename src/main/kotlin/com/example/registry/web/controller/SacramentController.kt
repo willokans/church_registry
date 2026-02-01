@@ -146,22 +146,45 @@ class SacramentController(
                 throw IllegalArgumentException("personId is required for sacrament type: ${type.name}")
             }
         }
+
+        if (type == SacramentType.EUCHARIST) {
+            val hasBaptism = sacramentService.hasActiveSacrament(tenantId, personId, SacramentType.BAPTISM)
+            if (!hasBaptism) {
+                throw IllegalArgumentException("BAPTISM record is required before creating EUCHARIST")
+            }
+        }
+
+        val eventDate = when (type) {
+            SacramentType.EUCHARIST -> request.dateOfHolyEucharist ?: request.date
+            else -> request.date
+        }
         
         // Build metadata for BAPTISM-specific information
-        val metadata = if (type == SacramentType.BAPTISM) {
-            val meta = mutableMapOf<String, Any>()
-            request.baptismName?.let { meta["baptismName"] = it }
-            request.fatherName?.let { meta["fatherName"] = it }
-            request.motherName?.let { meta["motherName"] = it }
-            request.parentAddress?.let { meta["parentAddress"] = it }
-            request.sponsor1Name?.let { meta["sponsor1Name"] = it }
-            request.sponsor2Name?.let { meta["sponsor2Name"] = it }
-            request.notes?.let { meta["notes"] = it }
-            if (meta.isNotEmpty()) meta else null
-        } else null
+        val metadata = when (type) {
+            SacramentType.BAPTISM -> {
+                val meta = mutableMapOf<String, Any>()
+                request.baptismName?.let { meta["baptismName"] = it }
+                request.fatherName?.let { meta["fatherName"] = it }
+                request.motherName?.let { meta["motherName"] = it }
+                request.parentAddress?.let { meta["parentAddress"] = it }
+                request.sponsor1Name?.let { meta["sponsor1Name"] = it }
+                request.sponsor2Name?.let { meta["sponsor2Name"] = it }
+                request.notes?.let { meta["notes"] = it }
+                if (meta.isNotEmpty()) meta else null
+            }
+            SacramentType.EUCHARIST -> {
+                val meta = mutableMapOf<String, Any>()
+                meta["dateOfHolyEucharist"] = eventDate
+                request.eucharistSponsor1Name?.let { meta["eucharistSponsor1Name"] = it }
+                request.eucharistSponsor2Name?.let { meta["eucharistSponsor2Name"] = it }
+                request.parish?.let { meta["parish"] = it }
+                if (meta.isNotEmpty()) meta else null
+            }
+            else -> null
+        }
         
         val event = sacramentService.create(
-            tenantId, type, personId, request.date,
+            tenantId, type, personId, eventDate,
             request.priestName, request.bookNo, request.pageNo, request.entryNo, createdBy, metadata
         )
         

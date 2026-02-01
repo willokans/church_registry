@@ -57,6 +57,16 @@ class SacramentService(
     }
     
     fun findById(id: Long): SacramentEvent? = sacramentEventRepository.findById(id).orElse(null)
+
+    fun hasActiveSacrament(
+        tenantId: Long,
+        personId: UUID,
+        type: SacramentType
+    ): Boolean {
+        return sacramentEventRepository.existsByTenantIdAndTypeAndPersonIdAndStatus(
+            tenantId, type, personId, Status.ACTIVE
+        )
+    }
     
     @Transactional
     fun create(
